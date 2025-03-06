@@ -1,7 +1,7 @@
 import React from 'react';
 import './SearchBar.css';
 
-function SearchBar({ searchQuery, setSearchQuery }) {
+function SearchBar({ searchQuery, setSearchQuery, onSearch }) {
     return (
         <div className="search-bar-container">
             <input
@@ -10,7 +10,7 @@ function SearchBar({ searchQuery, setSearchQuery }) {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cerca qualcosa..."
             />
-            <button>Ricerca</button>
+            <button onClick={onSearch}>Cerca</button>
         </div>
     );
 }

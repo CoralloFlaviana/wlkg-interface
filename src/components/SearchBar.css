@@ -12,7 +12,7 @@
 
 .search-bar-container button {
     padding: 10px;
-    background-color: #4CAF50;
+    background-color: #cda9f6;
     color: white;
     border: none;
     border-radius: 4px;
@@ -20,5 +20,5 @@
 }
 
 .search-bar-container button:hover {
-    background-color: #45a049;
+    background-color: #5945a0;
 }
