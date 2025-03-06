@@ -1,52 +1,46 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+.app-container {
+  display: grid;
+  grid-template-columns: 1fr 3fr 1fr; /* La colonna centrale è più larga */
+  grid-template-rows: auto 1fr auto; /* La parte centrale è fluida */
+  grid-template-areas:
+    "left center-top right"
+    "left center-bottom right";
+  height: 100vh; /* Occupare tutta l'altezza della finestra */
+  gap: 20px; /* Spaziatura tra le sezioni */
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.left-section {
+  grid-area: left;
+  background-color: #4b4949;
+  padding: 20px;
+  border-radius: 8px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.center-top-section {
+  grid-area: center-top;
+  background-color: #4b4949;
+  padding: 200px;
+  border-radius: 8px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.center-bottom-section {
+  grid-area: center-bottom;
+  background-color: #4b4949;
+  padding: 20px;
+  border-radius: 8px;
 }
 
-.card {
-  padding: 2em;
+.right-section {
+  grid-area: right;
+  background-color: #4b4949;
+  padding: 20px;
+  border-radius: 8px;
 }
 
-.read-the-docs {
-  color: #888;
+h2 {
+  margin-top: 0;
 }
 
-
-.App {
-  text-align: center;
-  font-family: Arial, sans-serif;
-}
-
-h1 {
-  color: #4CAF50;
+.search-results p {
+  margin: 5px 0;
 }
