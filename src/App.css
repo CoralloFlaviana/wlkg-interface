@@ -1,6 +1,6 @@
 .app-container {
   display: grid;
-  grid-template-columns: 0fr 3fr 0fr; /* Larghezza dinamica delle sezioni laterali */
+  grid-template-columns: 1fr 3fr 1fr; /* 1fr per sinistra, 3fr per il centro, 1fr per destra */
   grid-template-rows: auto 1fr auto;
   grid-template-areas:
     "left center-top right"
@@ -12,7 +12,7 @@
 
 /* Mostra la parte sinistra quando attiva */
 .app-container.show-left {
-  grid-template-columns: 1fr 3fr 0fr;
+  grid-template-columns: 1fr 3fr 1fr;
 }
 
 /* Mostra la parte destra quando attiva */
@@ -20,46 +20,95 @@
   grid-template-columns: 1fr 3fr 1fr;
 }
 
-.left-section, .right-section {
+/* Sezione sinistra */
+.left-section {
+  grid-area: left;
   background-color: #636363;
   padding: 20px;
   border-radius: 8px;
-  opacity: 0;
-  transform: translateX(-20px);
-  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.show-left .left-section, .show-right .right-section {
-  opacity: 1;
-  transform: translateX(0);
-}
-
+/* Sezione centrale superiore */
 .center-top-section {
   grid-area: center-top;
   background-color: #636363;
   padding: 200px;
   border-radius: 8px;
+  text-align: center;
+  color: white;
 }
 
+/* Sezione centrale inferiore (barra di ricerca) */
 .center-bottom-section {
   grid-area: center-bottom;
   background-color: #636363;
   padding: 20px;
   border-radius: 8px;
+  text-align: center;
 }
 
-h2 {
-  margin-top: 0;
+/* Sezione risultati nella colonna sinistra, sotto la ricerca */
+.center-results-section {
+  grid-area: left; /* Assicura che sia nella colonna sinistra */
+  background-color: #444;
+  padding: 20px;
+  border-radius: 8px;
+  overflow-y: auto;
+  max-height: 300px;
+  text-align: center;
+}
+
+/* Sezione destra */
+.right-section {
+  grid-area: right;
+  background-color: #636363;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+/* Stile per i risultati della ricerca */
+.search-results {
+  list-style: none;
+  padding: 0;
 }
 
 .search-results p {
   margin: 5px 0;
   cursor: pointer;
   padding: 8px;
-  background-color: #636363;
+  background-color: #555;
   border-radius: 4px;
+  color: white;
+  transition: background-color 0.3s ease-in-out;
 }
 
 .search-results p:hover {
-  background-color: #636363;
+  background-color: #777;
+}
+
+/* Pulsante di ricerca */
+button {
+  background-color: #28a745;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out;
+}
+
+button:hover {
+  background-color: #218838;
+}
+
+/* Input della barra di ricerca */
+input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 60%;
+  margin-right: 10px;
 }
