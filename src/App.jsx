@@ -7,8 +7,9 @@ function App() {
     const [results, setResults] = useState([]);
     const [selectedResult, setSelectedResult] = useState(null);
 
+    // Funzione per gestire il click su un risultato
     const handleResultClick = (result) => {
-        setSelectedResult(result);
+        setSelectedResult(result); // Imposta il risultato selezionato
     };
 
     return (
@@ -30,10 +31,14 @@ function App() {
                     <h2>Risultati della ricerca</h2>
                     <div className="search-results">
                         {results.map((result, index) => (
-                            <p key={index} onClick={() => handleResultClick(result)} className="result-item">
-                                {result.name?.value || "Nome non disponibile"}
-                                {result.titolo?.value || "Nome non disponibile"}
-                            </p>
+                            <div
+                                key={index}
+                                onClick={() => handleResultClick(result)} // Quando clicchi su un risultato, selezionarlo
+                                className="result-item"
+                            >
+                                {/* Visualizza il nome dell'opera */}
+                                <p>{result.sogg?.value || "Nome non disponibile"}</p>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -43,7 +48,11 @@ function App() {
             {selectedResult && (
                 <div className="right-section">
                     <h2>Dettagli</h2>
-                    <p>{selectedResult.name?.value || "Dettagli non disponibili."}</p>
+                    {/* Visualizza i dettagli del risultato selezionato */}
+                    <p>{selectedResult.sogg?.value || "Dettagli non disponibili."}</p>
+                    <a href={selectedResult.s?.value} target="_blank" rel="noopener noreferrer">
+                        {selectedResult.s?.value || "Link non disponibile"}
+                    </a>
                 </div>
             )}
         </div>
