@@ -1,97 +1,129 @@
+/* Impostazioni base */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: sans-serif;
+  background-color: #7bb58a;
+  box-sizing: border-box;
+}
+
+/* Contenitore principale */
 .app-container {
   display: grid;
-  grid-template-columns: 1fr 3fr 1fr; /* 1fr per sinistra, 3fr per il centro, 1fr per destra */
-  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 1fr 3fr 1fr; /* sinistra - centro - destra */
   grid-template-areas:
-    "left center-top right"
-    "left center-bottom right";
+    "left center right";
   height: 100vh;
+  width: 100vw;
   gap: 20px;
-  transition: grid-template-columns 0.3s ease-in-out;
-}
-
-/* Mostra la parte sinistra quando attiva */
-.app-container.show-left {
-  grid-template-columns: 1fr 3fr 1fr;
-}
-
-/* Mostra la parte destra quando attiva */
-.app-container.show-right {
-  grid-template-columns: 1fr 3fr 1fr;
-}
-
-/* Sezione sinistra */
-.left-section {
-  grid-area: left;
-  background-color: #636363;
   padding: 20px;
-  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+/* Area centrale con flex verticale */
+.center-area {
+  grid-area: center;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 20px;
 }
 
-/* Sezione centrale superiore */
-.center-top-section {
-  grid-area: center-top;
-  background-color: #636363;
-  padding: 200px;
+/* Sezioni */
+.left-section {
+  grid-area: left;
+  background-color: #00c97b;
+  padding: 20px;
   border-radius: 8px;
-  text-align: center;
-  color: white;
 }
 
-/* Sezione centrale inferiore (barra di ricerca) */
+.center-top-section,
 .center-bottom-section {
-  grid-area: center-bottom;
-  background-color: #636363;
-  padding: 20px;
-  border-radius: 8px;
-  text-align: center;
-}
-
-/* Sezione risultati nella colonna sinistra, sotto la ricerca */
-.center-results-section {
-  grid-area: left; /* Assicura che sia nella colonna sinistra */
-  background-color: #444;
-  padding: 20px;
-  border-radius: 8px;
-  overflow-y: auto;
-  max-height: 300px;
-  text-align: center;
-}
-
-/* Sezione destra */
-.right-section {
-  grid-area: right;
-  background-color: #636363;
+  background-color: #00f480;
   padding: 20px;
   border-radius: 8px;
 }
 
-/* Stile per i risultati della ricerca */
-.search-results {
-  list-style: none;
-  padding: 0;
+
+/* Layout centrato per "selezionati" */
+.center-top-section {
+  background-color: #00f480;
+  padding: 20px;
+  border-radius: 8px;
+  color: #fff;
+  flex: 1; /* <<< prende tutto lo spazio disponibile */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto; /* utile se gli elementi selezionati diventano tanti */
 }
 
+
+/* Risultati selezionati */
+.selected-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.selected-item {
+  background: #e5b769;
+  padding: 10px 15px;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.selected-item:hover {
+  background: #dca556;
+}
+
+.remove-button {
+  background: none;
+  border: none;
+  color: red;
+  font-size: 1.2rem;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+/* Risultati ricerca */
 .search-results p {
   margin: 5px 0;
   cursor: pointer;
   padding: 8px;
-  background-color: #555;
+  background-color: #00c97b;
   border-radius: 4px;
   color: white;
   transition: background-color 0.3s ease-in-out;
 }
 
 .search-results p:hover {
-  background-color: #777;
+  background-color: #00a868;
 }
 
-/* Pulsante di ricerca */
+/* Input */
+input {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  width: 60%;
+  margin-right: 10px;
+  background-color: #222;
+  color: white;
+}
+
+/* Pulsante */
 button {
-  background-color: #28a745;
+  background-color: #e5b769;
   color: white;
   padding: 10px 15px;
   border: none;
@@ -101,14 +133,5 @@ button {
 }
 
 button:hover {
-  background-color: #218838;
-}
-
-/* Input della barra di ricerca */
-input {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  width: 60%;
-  margin-right: 10px;
+  background-color: #d9a848;
 }
