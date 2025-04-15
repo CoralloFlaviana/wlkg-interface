@@ -1,137 +1,152 @@
-/* Impostazioni base */
-html, body {
+* {
   margin: 0;
   padding: 0;
-  width: 100%;
+  box-sizing: border-box;
+}
+html, body, #root {
   height: 100%;
-  font-family: sans-serif;
-  background-color: #7bb58a;
-  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Opzionale, evita scroll */
 }
 
-/* Contenitore principale */
+
 .app-container {
-  display: grid;
-  grid-template-columns: 1fr 3fr 1fr; /* sinistra - centro - destra */
-  grid-template-areas:
-    "left center right";
+  display: flex;
   height: 100vh;
-  width: 100vw;
-  gap: 20px;
-  padding: 20px;
-  box-sizing: border-box;
+  width: 100%;
 }
 
-/* Area centrale con flex verticale */
-.center-area {
-  grid-area: center;
+/* Sidebar */
+.sidebar {
+  width: 20%;
+  min-width: 200px;
+  background: #c6c6c6;
+  padding: 20px;
+  color: white;
+}
+
+.sidebar h2 {
+  margin-bottom: 20px;
+  font-size: 22px;
+}
+
+.draggable {
+  background: white;
+  color: #333;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  cursor: grab;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Main Content */
+.main-content {
+  flex-grow: 1;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  justify-content: space-between;
+  padding: 30px;
 }
 
-/* Sezioni */
-.left-section {
-  grid-area: left;
-  background-color: #00c97b;
+/* Header */
+.header {
+  text-align: center;
+  color: #7bb58a;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+/* Drop Area */
+.drop-area {
+  flex-grow: 1;
+  margin: 20px auto;
+  border: 2px dashed #c6c6c6;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
   padding: 20px;
-  border-radius: 8px;
-}
-
-.center-top-section,
-.center-bottom-section {
-  background-color: #00f480;
-  padding: 20px;
-  border-radius: 8px;
-}
-
-
-/* Layout centrato per "selezionati" */
-.center-top-section {
-  background-color: #00f480;
-  padding: 20px;
-  border-radius: 8px;
-  color: #fff;
-  flex: 1; /* <<< prende tutto lo spazio disponibile */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  overflow-y: auto; /* utile se gli elementi selezionati diventano tanti */
-}
-
-
-/* Risultati selezionati */
-.selected-items {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 20px;
   justify-content: center;
   align-items: center;
+  transition: all 0.3s ease;
+  width: 90%;
 }
 
-.selected-item {
-  background: #e5b769;
-  padding: 10px 15px;
-  border-radius: 8px;
-  color: white;
+.drop-area.drag-over {
+  background-color: rgb(198, 198, 198);
+  border-color: #e66666;
+}
+
+.drop-placeholder {
+  color: #7bb58a;
   font-weight: bold;
+}
+
+/* Selected item + close btn */
+.selected-item {
+  position: relative;
+  background-color: #f4a942;
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background-color: #111;
+  color: #ff4560;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
   cursor: pointer;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  transition: transform 0.2s ease;
 }
 
-.selected-item:hover {
-  background: #dca556;
+.remove-btn:hover {
+  transform: scale(1.1);
 }
 
-.remove-button {
-  background: none;
-  border: none;
-  color: red;
-  font-size: 1.2rem;
-  cursor: pointer;
-  margin-left: 10px;
+/* Search Bar */
+.search-bar {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  gap: 10px;
 }
 
-/* Risultati ricerca */
-.search-results p {
-  margin: 5px 0;
-  cursor: pointer;
-  padding: 8px;
-  background-color: #00c97b;
-  border-radius: 4px;
-  color: white;
-  transition: background-color 0.3s ease-in-out;
-}
-
-.search-results p:hover {
-  background-color: #00a868;
-}
-
-/* Input */
-input {
+.search-bar input {
   padding: 10px;
+  width: 300px;
+  border-radius: 6px;
   border: none;
-  border-radius: 5px;
-  width: 60%;
-  margin-right: 10px;
-  background-color: #222;
-  color: white;
+  outline: none;
 }
 
-/* Pulsante */
-button {
-  background-color: #e5b769;
+.search-bar button {
+  padding: 10px 20px;
+  background-color: #d19eff;
   color: white;
-  padding: 10px 15px;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s ease-in-out;
+  font-weight: bold;
 }
 
-button:hover {
-  background-color: #d9a848;
+.search-bar button:hover {
+  background-color: #bb7aff;
 }

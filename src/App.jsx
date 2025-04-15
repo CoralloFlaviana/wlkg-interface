@@ -1,139 +1,95 @@
 import React, { useState } from 'react';
 import './App.css';
-import SearchBar from './components/SearchBar';
-import Popup from './components/Popup';
 
 function App() {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [results, setResults] = useState([]);
-    const [selectedResults, setSelectedResults] = useState([]);
-    const [popupVisible, setPopupVisible] = useState(false);
-    const [popupItems, setPopupItems] = useState([]);
-    const [activePopupItem, setActivePopupItem] = useState(null);
+    const [selectedItems, setSelectedItems] = useState([]);
+    const [isDraggingOver, setIsDraggingOver] = useState(false);
+    const [search, setSearch] = useState('');
 
-    const handleResultClick = (result) => {
-        console.log("Risultato cliccato:", result); // Debug
-        setSelectedResults((prev) => {
-            if (!prev.some(r => r.label === result.label)) {
-                return [...prev, result];
-            }
-            return prev;
-        });
+    const handleDrop = (e) => {
+        e.preventDefault();
+        const data = e.dataTransfer.getData('text/plain');
+        if (data && !selectedItems.includes(data)) {
+            setSelectedItems((prev) => [...prev, data]);
+        }
+        setIsDraggingOver(false);
     };
 
-    const handleSelectedItemClick = (item) => {
-        setActivePopupItem(item);
-        setPopupItems([
-            { id: 1, name: "Opzione 1" },
-            { id: 2, name: "Opzione 2" },
-            { id: 3, name: "Opzione 3" }
-        ]);
-        setPopupVisible(true);
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        setIsDraggingOver(true);
     };
 
-    const handlePopupItemClick = (item) => {
-        console.log("Hai selezionato dal popup:", item);
-        setPopupItems([
-            { id: 4, name: "Sub-Opzione A" },
-            { id: 5, name: "Sub-Opzione B" }
-        ]);
-        setPopupVisible(false);
+    const handleDragLeave = () => {
+        setIsDraggingOver(false);
     };
 
-    const handleRemoveItem = (indexToRemove) => {
-        setSelectedResults((prev) =>
-            prev.filter((_, index) => index !== indexToRemove)
-        );
-        setPopupVisible(false);
-        setActivePopupItem(null);
+    const handleRemove = (item) => {
+        setSelectedItems((prev) => prev.filter((i) => i !== item));
+    };
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        alert(`Hai cercato: ${search}`);
+        setSearch('');
     };
 
     return (
         <div className="app-container">
-            <div className="center-area">
-                <div className="center-top-section">
+            {/* Sidebar */}
+            <div className="sidebar">
+                <h2>Risultati </h2>
+                <div
+                    className="draggable"
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData('text/plain', 'Books')}
+                >
+                    Books <br /> Distance: 9.91
+                </div>
+                <div
+                    className="draggable"
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData('text/plain', 'Alessandro Baricco')}
+                >
+                    Alessandro Baricco <br /> Distance: 8.17
+                </div>
+            </div>
+
+            {/* Main */}
+            <div className="main-content">
+                <div className="header">
                     <h2>Elementi selezionati</h2>
-                    <div className="selected-items">
-                        {selectedResults.length > 0 ? (
-                            selectedResults.map((result, index) => (
-                                <div
-                                    key={index}
-                                    className="selected-item"
-                                    onClick={() => handleSelectedItemClick(result)}
-                                >
-                                    <p>{result.label || "Nome non disponibile"}</p>
-                                    <p>Distance: {result.distance?.toFixed(2) || "N/A"}</p>
-                                    <button
-                                        className="remove-button"
-                                        onClick={(e) => {
-                                            e.stopPropagation(); // Evita che il click apra il popup
-                                            handleRemoveItem(index);
-                                        }}
-                                    >
-                                        ❌
-                                    </button>
-                                </div>
-                            ))
-                        ) : (
-                            <h5>Nessun elemento selezionato.</h5>
-                        )}
-                    </div>
                 </div>
 
-                <div className="center-bottom-section">
-                    <SearchBar
-                        searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery}
-                        setResults={setResults}
-                    />
-                </div>
-            </div>
-
-            {/*
-            // Sezione disattivata temporaneamente perché l'API non funziona
-            {results.length > 0 && (
-                <div className="left-section">
-                    <h2>Risultati della ricerca</h2>
-                    <div className="search-results">
-                        {results.map((result, index) => (
-                            <div
-                                key={index}
-                                onClick={() => handleResultClick(result)}
-                                className="result-item"
-                            >
-                                <p>{result.label || "Nome non disponibile"}</p>
-                                <p>Distance: {result.distance?.toFixed(2) || "N/A"}</p>
+                <div
+                    className={`drop-area ${isDraggingOver ? 'drag-over' : ''}`}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                >
+                    {selectedItems.length > 0 ? (
+                        selectedItems.map((item, index) => (
+                            <div key={index} className="selected-item">
+                                {item}
+                                <button onClick={() => handleRemove(item)}>❌</button>
                             </div>
-                        ))}
-                    </div>
+                        ))
+                    ) : (
+                        <p className="drop-placeholder">Trascina qui gli elementi!</p>
+                    )}
                 </div>
-            )}
-            */}
 
-            {/* MOCK temporaneo dei risultati */}
-            <div className="left-section">
-                <h2>Risultati fittizi (mock)</h2>
-                <div className="search-results">
-                    {[
-                        { label: "Books", distance: 9.915 },
-                        { label: "Alessandro Baricco", distance: 8.173 },
-                        { label: "books", distance: 9.915 }
-                    ].map((result, index) => (
-                        <div
-                            key={index}
-                            onClick={() => handleResultClick(result)}
-                            className="result-item"
-                        >
-                            <p>{result.label || "Nome non disponibile"}</p>
-                            <p>Distance: {result.distance?.toFixed(2) || "N/A"}</p>
-                        </div>
-                    ))}
-                </div>
+                {/* Search bar */}
+                <form className="search-bar" onSubmit={handleSearch}>
+                    <input
+                        type="text"
+                        placeholder="Cerca qualcosa..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                    <button type="submit">Cerca</button>
+                </form>
             </div>
-
-            {popupVisible && (
-                <Popup items={popupItems} onSelect={handlePopupItemClick} />
-            )}
         </div>
     );
 }
