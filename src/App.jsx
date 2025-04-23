@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import './App.css';
 
 function App() {
-    // Gestione degli elementi selezionati come oggetti {id, label, option}
     const [selectedItems, setSelectedItems] = useState([]);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
     const [search, setSearch] = useState('');
@@ -60,18 +60,14 @@ function App() {
                 <div
                     className="draggable"
                     draggable
-                    onDragStart={(e) =>
-                        e.dataTransfer.setData('text/plain', 'Books')
-                    }
+                    onDragStart={(e) => e.dataTransfer.setData('text/plain', 'Books')}
                 >
                     Books <br /> Distance: 9.91
                 </div>
                 <div
                     className="draggable"
                     draggable
-                    onDragStart={(e) =>
-                        e.dataTransfer.setData('text/plain', 'Alessandro Baricco')
-                    }
+                    onDragStart={(e) => e.dataTransfer.setData('text/plain', 'Alessandro Baricco')}
                 >
                     Alessandro Baricco <br /> Distance: 8.17
                 </div>
@@ -83,35 +79,39 @@ function App() {
                     <h2>Elementi selezionati</h2>
                 </div>
 
-                <div
+                <motion.div
                     className={`drop-area ${isDraggingOver ? 'drag-over' : ''}`}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
+                    initial={{ scale: 1 }}
+                    animate={{ scale: isDraggingOver ? 1.05 : 1 }}
+                    transition={{ type: 'spring', stiffness: 300 }}
                 >
                     {selectedItems.length > 0 ? (
                         selectedItems.map((item, index) => (
-                            <div
+                            <motion.div
                                 key={item.id}
                                 className="selected-item"
                                 onClick={() => handleItemClick(index)}
+                                drag
+                                dragConstraints={{ top: -50, bottom: 150, left: -150, right: 150 }}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4 }}
+                                whileDrag={{ scale: 1.1, zIndex: 10 }}
                             >
                                 {item.label}
                                 <button onClick={() => handleRemove(item.id)}>❌</button>
 
-                                {/* Se l'item ha l'opzione selezionata, mostriamo il rettangolo e l'arco */}
                                 {item.option && (
                                     <div className="option-container">
-                                        <div className="option-box">
-                                            {item.option}
-                                        </div>
-                                        {/* Elemento SVG che disegna una linea retta */}
+                                        <div className="option-box">{item.option}</div>
                                         <svg className="option-line" xmlns="http://www.w3.org/2000/svg" width="120" height="70">
-                                            <line x1="60" y1="0" x2="60" y2="70" stroke="#ff4560" strokeWidth="2"/>
+                                            <line x1="60" y1="0" x2="60" y2="70" stroke="#ff4560" strokeWidth="2" />
                                         </svg>
                                     </div>
                                 )}
-
 
                                 {menuOpenIndex === index && (
                                     <div className="dropdown-menu">
@@ -123,12 +123,12 @@ function App() {
                                         </ul>
                                     </div>
                                 )}
-                            </div>
+                            </motion.div>
                         ))
                     ) : (
                         <p className="drop-placeholder">Trascina qui gli elementi!</p>
                     )}
-                </div>
+                </motion.div>
 
                 {/* Search bar */}
                 <form className="search-bar" onSubmit={handleSearch}>
