@@ -8,9 +8,8 @@ html, body, #root {
   width: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden; /* Opzionale, evita scroll */
+  overflow: hidden;
 }
-
 
 .app-container {
   display: flex;
@@ -87,7 +86,7 @@ html, body, #root {
   font-weight: bold;
 }
 
-/* Selected item + close btn */
+/* Selected item e pulsante di rimozione */
 .selected-item {
   position: relative;
   background-color: #f4a942;
@@ -95,9 +94,12 @@ html, body, #root {
   padding: 1rem 1.5rem;
   border-radius: 12px;
   font-weight: bold;
+  cursor: pointer;
+  min-width: 100px;
+  text-align: center;
 }
 
-.remove-btn {
+.selected-item button {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -109,16 +111,79 @@ html, body, #root {
   height: 24px;
   font-size: 14px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   line-height: 1;
   padding: 0;
   transition: transform 0.2s ease;
 }
-
-.remove-btn:hover {
+.selected-item button:hover {
   transform: scale(1.1);
+}
+
+/* Container per il rettangolo opzione e l'arco */
+.option-container {
+  position: absolute;
+  top: -120px;  /* Regola la distanza dall'item */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Rettangolo dell'opzione */
+.option-box {
+  background-color: #ff4560;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* Arco che connette il rettangolo all'item */
+.option-arc {
+  margin-top: -2px;
+}
+.option-arc path {
+  stroke: #ff4560;
+  stroke-width: 2;
+  fill: none;
+}
+/* Esempio di personalizzazione per l'elemento SVG della linea */
+.option-line {
+  margin-top: -2px;  /* Regola lo spazio tra il rettangolo e la linea */
+}
+
+
+/* Menu a tendina per l’opzione */
+.dropdown-menu {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: white;
+  color: #333;
+  padding: 10px;
+  border-radius: 6px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+.dropdown-menu p {
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+.dropdown-menu ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
+.dropdown-menu li {
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.dropdown-menu li:hover {
+  text-decoration: underline;
 }
 
 /* Search Bar */
@@ -128,7 +193,6 @@ html, body, #root {
   margin-top: 20px;
   gap: 10px;
 }
-
 .search-bar input {
   padding: 10px;
   width: 300px;
@@ -136,7 +200,6 @@ html, body, #root {
   border: none;
   outline: none;
 }
-
 .search-bar button {
   padding: 10px 20px;
   background-color: #d19eff;
@@ -146,7 +209,6 @@ html, body, #root {
   cursor: pointer;
   font-weight: bold;
 }
-
 .search-bar button:hover {
   background-color: #bb7aff;
 }
