@@ -103,7 +103,7 @@ html, body, #root {
   position: absolute;
   top: 6px;
   right: 6px;
-  background-color: #111;
+  background-color: rgba(255, 212, 144, 0.71);
   color: #ff4560;
   border: none;
   border-radius: 50%;
@@ -122,7 +122,7 @@ html, body, #root {
 /* Container per il rettangolo opzione e l'arco */
 .option-container {
   position: absolute;
-  top: -120px;  /* Regola la distanza dall'item */
+  top: -100px;  /* Regola la distanza dall'item */
   left: 50%;
   transform: translateX(-50%);
   display: flex;

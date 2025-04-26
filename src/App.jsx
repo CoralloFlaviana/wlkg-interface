@@ -62,14 +62,14 @@ function App() {
                     draggable
                     onDragStart={(e) => e.dataTransfer.setData('text/plain', 'Books')}
                 >
-                    Books <br /> Distance: 9.91
+                    Books <br /> text
                 </div>
                 <div
                     className="draggable"
                     draggable
                     onDragStart={(e) => e.dataTransfer.setData('text/plain', 'Alessandro Baricco')}
                 >
-                    Alessandro Baricco <br /> Distance: 8.17
+                    Alessandro Baricco <br /> text
                 </div>
             </div>
 
