@@ -1,23 +1,33 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
+import SearchBar from "./components/SearchBar.jsx";
+import DropdownMenu from './components/DropdownMenu.jsx';
 
 function App() {
     const [selectedItems, setSelectedItems] = useState([]);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
     const [search, setSearch] = useState('');
     const [menuOpenIndex, setMenuOpenIndex] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [results, setResults] = useState([]);
 
     const handleDrop = (e) => {
         e.preventDefault();
-        const data = e.dataTransfer.getData('text/plain');
-        if (data && !selectedItems.some((item) => item.label === data)) {
-            const newItem = {
-                id: Math.random().toString(36).substring(2, 9),
-                label: data,
-                option: null,
-            };
-            setSelectedItems((prev) => [...prev, newItem]);
+        const data = e.dataTransfer.getData('application/json');
+        try {
+            const parsed = JSON.parse(data);
+            if (parsed && parsed.sogg && !selectedItems.some((item) => item.label === parsed.sogg)) {
+                const newItem = {
+                    id: Math.random().toString(36).substring(2, 9),
+                    label: parsed.sogg,
+                    relazione: parsed.relazione,
+                    option: null,
+                };
+                setSelectedItems((prev) => [...prev, newItem]);
+            }
+        } catch (err) {
+            console.error('Errore parsing JSON dal drag:', err);
         }
         setIsDraggingOver(false);
     };
@@ -45,11 +55,23 @@ function App() {
         setMenuOpenIndex(menuOpenIndex === index ? null : index);
     };
 
-    const handleOptionSelect = (index, optionNumber) => {
+    const handleOptionSelect = (index, option) => {
         const updatedItems = [...selectedItems];
-        updatedItems[index] = { ...updatedItems[index], option: optionNumber };
+        updatedItems[index] = { ...updatedItems[index], option };
         setSelectedItems(updatedItems);
         setMenuOpenIndex(null);
+    };
+
+    const handleResultClick = (value) => {
+        if (!selectedItems.some((item) => item.label === value)) {
+            const newItem = {
+                id: Math.random().toString(36).substring(2, 9),
+                label: value,
+                relazione: null,
+                option: null,
+            };
+            setSelectedItems((prev) => [...prev, newItem]);
+        }
     };
 
     return (
@@ -57,23 +79,29 @@ function App() {
             {/* Sidebar */}
             <div className="sidebar">
                 <h2>Risultati</h2>
-                <div
-                    className="draggable"
-                    draggable
-                    onDragStart={(e) => e.dataTransfer.setData('text/plain', 'Books')}
-                >
-                    Books <br /> text
-                </div>
-                <div
-                    className="draggable"
-                    draggable
-                    onDragStart={(e) => e.dataTransfer.setData('text/plain', 'Alessandro Baricco')}
-                >
-                    Alessandro Baricco <br /> text
-                </div>
+                {results.length > 0 ? (
+                    results.map((result, index) => (
+                        <div
+                            key={index}
+                            className="draggable"
+                            draggable
+                            onDragStart={(e) =>
+                                e.dataTransfer.setData('application/json', JSON.stringify({
+                                    sogg: result.sogg?.value,
+                                    relazione: result.s?.value
+                                }))
+                            }
+                            onClick={() => handleResultClick(result.sogg?.value)}
+                        >
+                            {result.sogg?.value}
+                        </div>
+                    ))
+                ) : (
+                    <p>Nessun risultato</p>
+                )}
             </div>
 
-            {/* Main */}
+            {/* Main Content */}
             <div className="main-content">
                 <div className="header">
                     <h2>Elementi selezionati</h2>
@@ -114,14 +142,11 @@ function App() {
                                 )}
 
                                 {menuOpenIndex === index && (
-                                    <div className="dropdown-menu">
-                                        <p>Seleziona un'opzione:</p>
-                                        <ul>
-                                            <li onClick={() => handleOptionSelect(index, 1)}>Opzione 1</li>
-                                            <li onClick={() => handleOptionSelect(index, 2)}>Opzione 2</li>
-                                            <li onClick={() => handleOptionSelect(index, 3)}>Opzione 3</li>
-                                        </ul>
-                                    </div>
+                                    <DropdownMenu
+                                        value={item.relazione}
+                                        onSelect={(selectedOption) => handleOptionSelect(index, selectedOption)}
+                                        closeMenu={() => setMenuOpenIndex(null)}
+                                    />
                                 )}
                             </motion.div>
                         ))
@@ -131,15 +156,9 @@ function App() {
                 </motion.div>
 
                 {/* Search bar */}
-                <form className="search-bar" onSubmit={handleSearch}>
-                    <input
-                        type="text"
-                        placeholder="Cerca qualcosa..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                    <button type="submit">Cerca</button>
-                </form>
+                <div className="center-bottom-section">
+                    <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} setResults={setResults} />
+                </div>
             </div>
         </div>
     );

@@ -10,6 +10,11 @@ export default defineConfig({
         changeOrigin: true,              // Cambia l'origine della richiesta
         secure: false,                   // Impostazione per HTTP (se non usi HTTPS)
       },
+      '/rel':{
+        target: 'http://0.0.0.0:8000/query/',
+        changeOrigin: true,
+        secure: false,
+      }
     },
   },
 });
