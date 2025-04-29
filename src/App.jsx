@@ -1,16 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
 import SearchBar from "./components/SearchBar.jsx";
 import DropdownMenu from './components/DropdownMenu.jsx';
+import RedLabel from "./components/RedLabel.jsx";
+
 
 function App() {
     const [selectedItems, setSelectedItems] = useState([]);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
-    const [search, setSearch] = useState('');
-    const [menuOpenIndex, setMenuOpenIndex] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [results, setResults] = useState([]);
+    const [menuOpenIndex, setMenuOpenIndex] = useState(null);
+
+    // Crea un array di riferimenti per tutti gli elementi selezionati
+    const itemRefs = useRef([]);
 
     const handleDrop = (e) => {
         e.preventDefault();
@@ -22,7 +26,7 @@ function App() {
                     id: Math.random().toString(36).substring(2, 9),
                     label: parsed.sogg,
                     relazione: parsed.relazione,
-                    option: null,
+                    options: [], // options: [parsed.relazione]
                 };
                 setSelectedItems((prev) => [...prev, newItem]);
             }
@@ -45,20 +49,19 @@ function App() {
         setSelectedItems((prev) => prev.filter((i) => i.id !== itemId));
     };
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        alert(`Hai cercato: ${search}`);
-        setSearch('');
-    };
-
     const handleItemClick = (index) => {
         setMenuOpenIndex(menuOpenIndex === index ? null : index);
     };
 
-    const handleOptionSelect = (index, option) => {
-        const updatedItems = [...selectedItems];
-        updatedItems[index] = { ...updatedItems[index], option };
-        setSelectedItems(updatedItems);
+    const handleOptionSelect = (itemIndex, selectedOption) => {
+        setSelectedItems(prev =>
+            prev.map((item, i) =>
+                i === itemIndex ? {
+                    ...item,
+                    options: [...(item.options || []), selectedOption]
+                } : item
+            )
+        );
         setMenuOpenIndex(null);
     };
 
@@ -68,7 +71,7 @@ function App() {
                 id: Math.random().toString(36).substring(2, 9),
                 label: value,
                 relazione: null,
-                option: null,
+                options: [],
             };
             setSelectedItems((prev) => [...prev, newItem]);
         }
@@ -120,6 +123,10 @@ function App() {
                         selectedItems.map((item, index) => (
                             <motion.div
                                 key={item.id}
+                                ref={(el) => {
+                                    if (el) itemRefs.current[item.id] = el;
+                                    else delete itemRefs.current[item.id]; // cleanup quando rimosso
+                                }}
                                 className="selected-item"
                                 onClick={() => handleItemClick(index)}
                                 drag
@@ -130,16 +137,15 @@ function App() {
                                 whileDrag={{ scale: 1.1, zIndex: 10 }}
                             >
                                 {item.label}
-                                <button onClick={() => handleRemove(item.id)}>❌</button>
+                                <button onClick={() => handleRemove(item.id)}>X</button>
 
-                                {item.option && (
-                                    <div className="option-container">
-                                        <div className="option-box">{item.option}</div>
-                                        <svg className="option-line" xmlns="http://www.w3.org/2000/svg" width="120" height="70">
-                                            <line x1="60" y1="0" x2="60" y2="70" stroke="#ff4560" strokeWidth="2" />
-                                        </svg>
-                                    </div>
-                                )}
+                                {item.options?.map((opt, i) => (
+                                    <RedLabel
+                                        key={`${item.id}-${i}`}
+                                        option={opt}
+                                        parentRef={{ current: itemRefs.current[item.id] }}
+                                    />
+                                ))}
 
                                 {menuOpenIndex === index && (
                                     <DropdownMenu
@@ -155,9 +161,14 @@ function App() {
                     )}
                 </motion.div>
 
+
                 {/* Search bar */}
                 <div className="center-bottom-section">
-                    <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} setResults={setResults} />
+                    <SearchBar
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        setResults={setResults}
+                    />
                 </div>
             </div>
         </div>

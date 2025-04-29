@@ -26,7 +26,7 @@ function DropdownMenu({ onSelect, closeMenu, value }) {
     return (
         <div className="dropdown-menu">
             <button onClick={closeMenu}>X</button>
-            <h4>Relazioni disponibili:</h4>
+            <h4>Entità disponibili:</h4>
             <ul>
                 {options.length > 0 ? (
                     options.map((option, index) => (
@@ -35,7 +35,7 @@ function DropdownMenu({ onSelect, closeMenu, value }) {
                         </li>
                     ))
                 ) : (
-                    <li>Caricamento relazioni...</li>
+                    <li>Caricamento entità...</li>
                 )}
             </ul>
         </div>

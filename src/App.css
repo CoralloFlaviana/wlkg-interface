@@ -212,3 +212,14 @@ html, body, #root {
 .search-bar button:hover {
   background-color: #bb7aff;
 }
+
+.red-label-wrapper {
+  position: absolute;
+  top: -70px; /* distanza sopra al box arancione */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px; /* spazio tra le RedLabel */
+  z-index: 5;
+}
+
