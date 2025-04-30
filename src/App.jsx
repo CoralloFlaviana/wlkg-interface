@@ -142,8 +142,10 @@ function App() {
                                 {item.options?.map((opt, i) => (
                                     <RedLabel
                                         key={`${item.id}-${i}`}
-                                        option={opt}
+                                        option={opt.label}
                                         parentRef={{ current: itemRefs.current[item.id] }}
+                                        oggValue={item.relazione}
+                                        relValue={opt.uri}
                                     />
                                 ))}
 

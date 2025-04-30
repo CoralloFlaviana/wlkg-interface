@@ -97,6 +97,7 @@ html, body, #root {
   cursor: pointer;
   min-width: 100px;
   text-align: center;
+  z-index: 10;
 }
 
 .selected-item button {
@@ -144,13 +145,14 @@ html, body, #root {
 /* Arco che connette il rettangolo all'item */
 .option-arc {
   margin-top: -2px;
+  z-index: 1;
 }
 .option-arc path {
   stroke: #ff4560;
   stroke-width: 2;
   fill: none;
 }
-/* Esempio di personalizzazione per l'elemento SVG della linea */
+
 .option-line {
   margin-top: -2px;  /* Regola lo spazio tra il rettangolo e la linea */
 }
@@ -220,6 +222,6 @@ html, body, #root {
   transform: translateX(-50%);
   display: flex;
   gap: 12px; /* spazio tra le RedLabel */
-  z-index: 5;
+  z-index: 10;
 }
 

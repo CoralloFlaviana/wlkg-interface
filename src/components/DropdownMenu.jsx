@@ -13,7 +13,10 @@ function DropdownMenu({ onSelect, closeMenu, value }) {
                 console.log(value);
                 const data = await response.json();
                 console.log(data)
-                const resultOptions = data.results.map(result => result.relazione.value);
+                const resultOptions = data.results.map(result => ({
+                    label: result.relazione?.value || '',
+                    uri: result.rel?.value || ''
+                }));
                 setOptions(resultOptions);
             } catch (error) {
                 console.error('Errore nella chiamata API:', error);
@@ -31,7 +34,7 @@ function DropdownMenu({ onSelect, closeMenu, value }) {
                 {options.length > 0 ? (
                     options.map((option, index) => (
                         <li key={index} onClick={() => onSelect(option)}>
-                            {option}
+                            {option.label}
                         </li>
                     ))
                 ) : (

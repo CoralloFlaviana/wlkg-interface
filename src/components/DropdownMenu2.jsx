@@ -1,45 +1,51 @@
 import React, { useEffect, useState } from 'react';
+import './DropdownMenu2.css';
 
-function DropdownMenu({ onSelect, closeMenu, value }) {
+const DropdownMenu2 = ({ onClose, position, relValue, oggValue }) => {
     const [options, setOptions] = useState([]);
 
     useEffect(() => {
-        const fetchOptions = async () => {
-            if (!value) return;
-
+        const fetchData = async () => {
             try {
-                // Esegui la chiamata API usando il valore passato
-                const response = await fetch(`/rel?ris=${encodeURIComponent(value)}`);
-                console.log(value);
+                const rel = `<${relValue}>`;
+                const ogg = `<${oggValue}>`;
+
+                console.log("Relazione:", rel);
+                console.log("Oggetto:", ogg);
+
+                const response = await fetch(`/entityFind?rel=${encodeURIComponent(rel)}&o=${encodeURIComponent(ogg)}`);
                 const data = await response.json();
-                console.log(data)
-                const resultOptions = data.results.map(result => result.relazione.value);
-                setOptions(resultOptions);
+                console.log(data);
+                const soggOptions = data.results
+                    .map(r => r.sogg)
+                    .filter(Boolean);
+
+                setOptions(soggOptions);
             } catch (error) {
-                console.error('Errore nella chiamata API:', error);
+                console.error('Errore nella fetch del menu:', error);
+                setOptions([]); // In caso di errore, mostra menu vuoto
             }
         };
 
-        fetchOptions();
-    }, [value]); // Effettua la chiamata solo se 'value' cambia
+        fetchData();
+    }, [relValue, oggValue]);
 
     return (
-        <div className="dropdown-menu">
-            <button onClick={closeMenu}>X</button>
+        <div className="dropdown-menu2" >
+            <button onClick={onClose}>X</button>
             <h4>Entità disponibili:</h4>
             <ul>
                 {options.length > 0 ? (
-                    options.map((option, index) => (
-                        <li key={index} onClick={() => onSelect(option)}>
-                            {option}
-                        </li>
+                    options.map((sogg, i) => (
+                        <li key={i}>{sogg}</li>
                     ))
                 ) : (
-                    <li>Caricamento entità...</li>
+                    <li>Nessun valore disponibile</li>
                 )}
             </ul>
         </div>
     );
-}
 
-export default DropdownMenu;
+};
+
+export default DropdownMenu2;
