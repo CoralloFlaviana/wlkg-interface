@@ -13,10 +13,12 @@ function DropdownMenu({ onSelect, closeMenu, value }) {
                 console.log(value);
                 const data = await response.json();
                 console.log(data)
-                const resultOptions = data.results.map(result => ({
+
+                 let resultOptions = data.results.map(result => ({
                     label: result.relazione?.value || '',
                     uri: result.rel?.value || ''
                 }));
+
                 setOptions(resultOptions);
             } catch (error) {
                 console.error('Errore nella chiamata API:', error);

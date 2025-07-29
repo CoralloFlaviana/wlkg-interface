@@ -5,15 +5,12 @@ import SearchBar from "./components/SearchBar.jsx";
 import DropdownMenu from './components/DropdownMenu.jsx';
 import RedLabel from "./components/RedLabel.jsx";
 
-
 function App() {
     const [selectedItems, setSelectedItems] = useState([]);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [results, setResults] = useState([]);
     const [menuOpenIndex, setMenuOpenIndex] = useState(null);
-
-    // Crea un array di riferimenti per tutti gli elementi selezionati
     const itemRefs = useRef([]);
 
     const handleDrop = (e) => {
@@ -26,7 +23,7 @@ function App() {
                     id: Math.random().toString(36).substring(2, 9),
                     label: parsed.sogg,
                     relazione: parsed.relazione,
-                    options: [], // options: [parsed.relazione]
+                    options: [],
                 };
                 setSelectedItems((prev) => [...prev, newItem]);
             }
@@ -65,6 +62,22 @@ function App() {
         setMenuOpenIndex(null);
     };
 
+    const handleDeleteOption = (itemId, optionIndex) => {
+        setSelectedItems(prev =>
+            prev.map(item => {
+                if (item.id === itemId) {
+                    const updatedOptions = [...item.options];
+                    updatedOptions.splice(optionIndex, 1);
+                    return {
+                        ...item,
+                        options: updatedOptions
+                    };
+                }
+                return item;
+            })
+        );
+    };
+
     const handleResultClick = (value) => {
         if (!selectedItems.some((item) => item.label === value)) {
             const newItem = {
@@ -77,9 +90,14 @@ function App() {
         }
     };
 
+    // Prevent event propagation when clicking buttons
+    const handleButtonClick = (e, action) => {
+        e.stopPropagation();
+        action();
+    };
+
     return (
         <div className="app-container">
-            {/* Sidebar */}
             <div className="sidebar">
                 <h2>Risultati</h2>
                 {results.length > 0 ? (
@@ -104,7 +122,6 @@ function App() {
                 )}
             </div>
 
-            {/* Main Content */}
             <div className="main-content">
                 <div className="header">
                     <h2>Elementi selezionati</h2>
@@ -125,7 +142,7 @@ function App() {
                                 key={item.id}
                                 ref={(el) => {
                                     if (el) itemRefs.current[item.id] = el;
-                                    else delete itemRefs.current[item.id]; // cleanup quando rimosso
+                                    else delete itemRefs.current[item.id];
                                 }}
                                 className="selected-item"
                                 onClick={() => handleItemClick(index)}
@@ -136,18 +153,33 @@ function App() {
                                 transition={{ duration: 0.4 }}
                                 whileDrag={{ scale: 1.1, zIndex: 10 }}
                             >
-                                {item.label}
-                                <button onClick={() => handleRemove(item.id)}>X</button>
+                                {/* Wrap text in a container div for better display */}
+                                <div className="selected-item-text">
+                                    {item.label}
+                                </div>
 
-                                {item.options?.map((opt, i) => (
-                                    <RedLabel
-                                        key={`${item.id}-${i}`}
-                                        option={opt.label}
-                                        parentRef={{ current: itemRefs.current[item.id] }}
-                                        oggValue={item.relazione}
-                                        relValue={opt.uri}
-                                    />
-                                ))}
+                                <button
+                                    className="remove-btn"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRemove(item.id);
+                                    }}
+                                >
+                                    X
+                                </button>
+
+                                <div className="item-buttons">
+                                    <button
+                                        onClick={(e) => handleButtonClick(e, () => alert('Hai cliccato INFO'))}
+                                    >
+                                        INFO
+                                    </button>
+                                    <button
+                                        onClick={(e) => handleButtonClick(e, () => setMenuOpenIndex(index))}
+                                    >
+                                        RELAZIONI
+                                    </button>
+                                </div>
 
                                 {menuOpenIndex === index && (
                                     <DropdownMenu
@@ -156,6 +188,17 @@ function App() {
                                         closeMenu={() => setMenuOpenIndex(null)}
                                     />
                                 )}
+
+                                {item.options?.map((opt, i) => (
+                                    <RedLabel
+                                        key={`${item.id}-${i}`}
+                                        option={opt.label}
+                                        parentRef={{ current: itemRefs.current[item.id] }}
+                                        oggValue={item.relazione}
+                                        relValue={opt.uri}
+                                        onDelete={() => handleDeleteOption(item.id, i)}
+                                    />
+                                ))}
                             </motion.div>
                         ))
                     ) : (
@@ -163,8 +206,6 @@ function App() {
                     )}
                 </motion.div>
 
-
-                {/* Search bar */}
                 <div className="center-bottom-section">
                     <SearchBar
                         searchQuery={searchQuery}

@@ -57,6 +57,36 @@ function SearchBar({ searchQuery, setSearchQuery, setResults }) {
                 formattedResults = [];
             }
 
+            //todo NOTA: per test !!!
+            if (formattedResults.length === 0) {
+                console.warn("Nessun risultato trovato. Uso dati fittizi.");
+                const fakeData = {
+                    results: {
+                        bindings: [
+                            {
+                                ogg: { type: "literal", value: "Hungary" },
+                                s: { type: "uri", value: "http://purl.archive.org/urwriters#citizenship" }
+                            },
+                            {
+                                ogg: { type: "literal", value: "France" },
+                                s: { type: "uri", value: "http://purl.archive.org/urwriters#citizenship" }
+                            }
+                        ]
+                    }
+                };
+
+                if (Array.isArray(fakeData.results)) {
+                    formattedResults = fakeData.results;
+                } else if (typeof fakeData.results === "object") {
+                    formattedResults = Object.values(fakeData.results);
+                } else {
+                    formattedResults = [];
+                }
+
+                console.log(formattedResults);
+            }
+
+
             setResults(formattedResults);
         } catch (error) {
             console.error("Errore nella chiamata API:", error);

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import DropdownMenu2 from './DropdownMenu2'; // Importa il nuovo menu
 import './RedLabel.css';
 
-const RedLabel = ({ option, parentRef, relValue, oggValue }) => {
+const RedLabel = ({ option, parentRef, relValue, oggValue, onDelete }) => {
     const labelRef = useRef(null);
     const [position, setPosition] = useState({ x: 0, y: -80 });
     const [lineCoords, setLineCoords] = useState({ x1: 0, y1: 0, x2: 0, y2: 0 });
@@ -16,11 +16,21 @@ const RedLabel = ({ option, parentRef, relValue, oggValue }) => {
         const parentBox = parentRef.current.getBoundingClientRect();
         const labelBox = labelRef.current.getBoundingClientRect();
 
+        // Calcola la posizione della linea
+        // Se il label è sopra l'elemento, la linea deve partire dal top center dell'elemento padre
+        // Se il label è sotto l'elemento, la linea deve partire dal bottom center dell'elemento padre
+        const isLabelAbove = labelBox.top < parentBox.top;
+
+        const startX = parentBox.left + parentBox.width / 2;
+        const startY = isLabelAbove ? parentBox.top : parentBox.top + parentBox.height;
+        const endX = labelBox.left + labelBox.width / 2;
+        const endY = isLabelAbove ? labelBox.top + labelBox.height : labelBox.top;
+
         setLineCoords({
-            x1: parentBox.left + parentBox.width / 2,
-            y1: parentBox.top + parentBox.height / 2,
-            x2: labelBox.left + labelBox.width / 2,
-            y2: labelBox.top + labelBox.height / 2,
+            x1: startX,
+            y1: startY,
+            x2: endX,
+            y2: endY,
         });
     }, [parentRef]);
 
@@ -42,6 +52,14 @@ const RedLabel = ({ option, parentRef, relValue, oggValue }) => {
             setMenuPosition({ x: rect.right + 10, y: rect.top });
         }
         setShowMenu(prev => !prev); // Mostra/nascondi il menu
+    };
+
+    // Funzione per gestire l'eliminazione della label
+    const handleDelete = (e) => {
+        e.stopPropagation(); // Evita che il click si propaghi al div principale
+        if (onDelete) {
+            onDelete();
+        }
     };
 
     return (
@@ -76,6 +94,13 @@ const RedLabel = ({ option, parentRef, relValue, oggValue }) => {
                 }}
             >
                 {option}
+                <button
+                    className="delete-label-btn"
+                    onClick={handleDelete}
+                    title="Elimina"
+                >
+                    ×
+                </button>
             </motion.div>
 
             {/* Aggiungi il dropdown solo se showMenu è true */}
@@ -85,6 +110,7 @@ const RedLabel = ({ option, parentRef, relValue, oggValue }) => {
                     onClose={() => setShowMenu(false)}
                     relValue={relValue}
                     oggValue={oggValue}
+                    onSelect={null}
                 />
             )}
         </>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './DropdownMenu2.css';
 
-const DropdownMenu2 = ({ onClose, position, relValue, oggValue }) => {
+const DropdownMenu2 = ({ onClose, position, relValue, oggValue, onSelect }) => {
     const [options, setOptions] = useState([]);
 
     useEffect(() => {
@@ -37,7 +37,9 @@ const DropdownMenu2 = ({ onClose, position, relValue, oggValue }) => {
             <ul>
                 {options.length > 0 ? (
                     options.map((sogg, i) => (
-                        <li key={i}>{sogg}</li>
+                        <li key={i} onClick={() => onSelect(sogg)}>
+                            {sogg}
+                        </li>
                     ))
                 ) : (
                     <li>Nessun valore disponibile</li>
