@@ -11,12 +11,13 @@
 }
 
 .search-bar-container button {
-    padding: 10px;
-    background-color: #cda9f6;
+    padding: 12px 24px;
+    background-color: #9b59b6;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
+    fontWeight: bold;
 }
 
 .search-bar-container button:hover {
