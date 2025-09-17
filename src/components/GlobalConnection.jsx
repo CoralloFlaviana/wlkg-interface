@@ -1,45 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import DropdownMenu from './DropdownMenu.jsx';
 
-const Connection = ({
-                        relation,
-                        target,
-                        sourceBox,
-                        onDelete,
-                        onTargetMove,
-                        connectionId,
-                        sourceBoxId,
-                        onOpenRelations,
-                        menuOpenConnectionId,
-                        setMenuOpenConnectionId,
-                        relations,
-                        onSelect,
-                        boxRefs,
-                        renderArrow = true // Nuovo prop per controllare il rendering della freccia
-                    }) => {
+const GlobalConnection = ({
+                              connection,
+                              sourcePosition,
+                              onDelete,
+                              onTargetMove,
+                              onOpenRelations,
+                              menuOpenConnectionId,
+                              setMenuOpenConnectionId,
+                              relations,
+                              onSelect,
+                              boxRefs
+                          }) => {
     const [targetPosition, setTargetPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-    // Genera un ID unico per questa box target
-    const targetBoxId = `connection-box-${sourceBoxId}-${connectionId}`;
+    const targetBoxId = `global-connection-box-${connection.sourceBoxId}-${connection.id}`;
 
     useEffect(() => {
         const initialPos = { x: Math.random() * 600 + 300, y: Math.random() * 300 + 200 };
         setTargetPosition(initialPos);
-        onTargetMove(sourceBoxId, connectionId, initialPos);
+        onTargetMove(connection.sourceBoxId, connection.id, initialPos);
     }, []);
 
-    // Registra questa box target nel refs
     useEffect(() => {
         if (boxRefs.current) {
             boxRefs.current[targetBoxId] = {
                 position: targetPosition,
-                uri: target.uri,
-                label: target.label
+                uri: connection.target.uri,
+                label: connection.target.label
             };
         }
-    }, [targetPosition, target.uri, target.label, targetBoxId, boxRefs]);
+    }, [targetPosition, connection.target.uri, connection.target.label, targetBoxId, boxRefs]);
 
     const handleMouseDown = (e) => {
         e.preventDefault();
@@ -55,7 +49,7 @@ const Connection = ({
         const newPos = { x: e.clientX - containerRect.left - dragOffset.x, y: e.clientY - containerRect.top - dragOffset.y };
         const clampedPos = { x: Math.max(75, Math.min(newPos.x, window.innerWidth - 300 - 75)), y: Math.max(30, Math.min(newPos.y, window.innerHeight - 200)) };
         setTargetPosition(clampedPos);
-        onTargetMove(sourceBoxId, connectionId, clampedPos);
+        onTargetMove(connection.sourceBoxId, connection.id, clampedPos);
 
         // Aggiorna anche la posizione nel boxRefs
         if (boxRefs.current[targetBoxId]) {
@@ -76,43 +70,9 @@ const Connection = ({
         }
     }, [isDragging, dragOffset]);
 
-    if (!sourceBox) return null;
-
-    // Calcoli per la freccia (solo se renderArrow è true)
-    let arrowElements = null;
-    if (renderArrow) {
-        const sourceRect = sourceBox.getBoundingClientRect();
-        const containerRect = sourceBox.offsetParent?.getBoundingClientRect() || sourceRect;
-        const sourceX = sourceRect.left - containerRect.left + sourceRect.width / 2;
-        const sourceY = sourceRect.top - containerRect.top + sourceRect.height / 2;
-        const targetX = targetPosition.x;
-        const targetY = targetPosition.y;
-        const angle = Math.atan2(targetY - sourceY, targetX - sourceX) * (180 / Math.PI);
-        const length = Math.sqrt(Math.pow(targetX - sourceX, 2) + Math.pow(targetY - sourceY, 2));
-
-        arrowElements = (
-            <>
-                {/* Linea */}
-                <div style={{ position: 'absolute', left: sourceX, top: sourceY, width: length, height: '3px', backgroundColor: '#e74c3c', transformOrigin: '0 50%', transform: `rotate(${angle}deg)`, zIndex: 5 }} />
-
-                {/* Freccia */}
-                <div style={{ position: 'absolute', left: targetX - 8, top: targetY - 4, width: 0, height: 0, borderLeft: '8px solid #e74c3c', borderTop: '4px solid transparent', borderBottom: '4px solid transparent', transform: `rotate(${angle}deg)`, zIndex: 6 }} />
-
-                {/* Label relazione sulla freccia */}
-                <div style={{ position: 'absolute', left: sourceX + (targetX - sourceX) * 0.5 - 50, top: sourceY + (targetY - sourceY) * 0.5 - 20, backgroundColor: '#e74c3c', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', zIndex: 7, pointerEvents: 'auto', whiteSpace: 'nowrap' }}>
-                    {relation.label}
-                    <button onClick={onDelete} style={{ marginLeft: '8px', background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>×</button>
-                </div>
-            </>
-        );
-    }
-
     return (
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-            {/* Render freccia solo se richiesto */}
-            {arrowElements}
-
-            {/* Box target */}
+            {/* Solo la box target - le frecce sono gestite dal ConnectionManager */}
             <div
                 id={targetBoxId}
                 onMouseDown={handleMouseDown}
@@ -122,7 +82,7 @@ const Connection = ({
                     top: targetPosition.y - 30,
                     width: '150px',
                     height: '80px',
-                    backgroundColor: isDragging ? '#e67e22' : '#f39c12',
+                    backgroundColor: isDragging ? '#8e44ad' : '#9b59b6',
                     borderRadius: '12px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -138,15 +98,46 @@ const Connection = ({
                     transform: isDragging ? 'scale(1.05)' : 'scale(1)',
                     transition: isDragging ? 'none' : 'all 0.2s ease',
                     userSelect: 'none',
-                    border: isDragging ? '2px solid #d35400' : '2px solid transparent'
+                    border: isDragging ? '2px solid #7d3c98' : '2px solid transparent'
                 }}
             >
+                <div
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        // Rimuovi la box dai refs
+                        if (boxRefs.current[targetBoxId]) {
+                            delete boxRefs.current[targetBoxId];
+                        }
+                        // Rimuovi tutte le connessioni globali legate a questa box
+                        onDelete(connection.sourceBoxId, connection.id);
+                    }}
+                    style={{
+                        position: 'absolute',
+                        top: '4px',
+                        right: '4px',
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(255,0,0,0.8)',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        zIndex: 1002
+                    }}
+                >
+                    ×
+                </div>
+
                 <div style={{ marginBottom: '8px', textAlign: 'center', lineHeight: '1.2' }}>
-                    {target.label}
+                    {connection.target.label}
                 </div>
 
                 <div style={{ display: 'flex', gap: '6px' }}>
-                    <button onClick={(e) => { e.stopPropagation(); alert(`INFO di: ${target.label}`); }}
+                    <button onClick={(e) => { e.stopPropagation(); alert(`INFO di: ${connection.target.label}`); }}
                             style={{ padding: '2px 6px', borderRadius: '4px', border: 'none', backgroundColor: 'rgba(255,255,255,0.3)', color: 'white', cursor: 'pointer', fontSize: '10px' }}>
                         INFO
                     </button>
@@ -163,7 +154,7 @@ const Connection = ({
 
                 {menuOpenConnectionId === targetBoxId && (
                     <DropdownMenu
-                        sourceBoxId={target.uri}
+                        sourceBoxId={connection.target.uri}
                         relations={relations}
                         onSelect={(connectionData) => {
                             // Passa l'ID corretto della box che ha fatto la richiesta
@@ -181,4 +172,4 @@ const Connection = ({
     );
 };
 
-export default Connection;
+export default GlobalConnection;
