@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
-const API_BASE = import.meta.env.VITE_API_URL;
+//const API_BASE = import.meta.env.VITE_API_URL;
+const API_BASE = '/api/query/';
 
 const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId }) => {
     // sourceBoxId dovrebbe essere l'URI dell'entità, non l'ID del box DOM

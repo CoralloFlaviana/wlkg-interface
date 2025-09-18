@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './SearchBar.css';
 
 //const API_BASE = import.meta.env.VITE_API_URL;
-const API_BASE = 'http://10.10.0.3:8000/query';
+const API_BASE = '/api/query/';
 
 function SearchBar({ searchQuery, setSearchQuery, setResults }) {
     const [isLoading, setIsLoading] = useState(false); // Stato di caricamento
