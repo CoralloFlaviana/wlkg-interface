@@ -1,52 +1,275 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 20%;
+  min-width: 200px;
+  background: #c6c6c6;
+  padding: 20px;
+  color: white;
+}
+
+.sidebar h2 {
+  margin-bottom: 20px;
+  font-size: 22px;
+}
+
+.draggable {
+  background: white;
+  color: #333;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  cursor: grab;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Main Content */
+.main-content {
+  flex-grow: 1;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 30px;
+}
+
+/* Header */
+.header {
   text-align: center;
+  color: #7bb58a;
+  font-size: 28px;
+  font-weight: bold;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Drop Area */
+.drop-area {
+  flex-grow: 1;
+  margin: 20px auto;
+  border: 2px dashed #c6c6c6;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+  width: 90%;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.drop-area.drag-over {
+  background-color: rgb(198, 198, 198);
+  border-color: #e66666;
 }
 
-.card {
-  padding: 2em;
+.drop-placeholder {
+  color: #7bb58a;
+  font-weight: bold;
 }
 
-.read-the-docs {
-  color: #888;
-}
-
-
-.App {
+/* Selected item e pulsante di rimozione */
+.selected-item {
+  position: relative;
+  background-color: #f4a942;
+  color: white;
+  padding: 1rem 1rem 5rem; /* Aumentato padding in basso per i pulsanti */
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 200px; /* Fixed width */
+  min-height: 100px; /* Altezza minima */
   text-align: center;
-  font-family: Arial, sans-serif;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-h1 {
-  color: #4CAF50;
+.selected-item button.remove-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(255, 212, 144, 0.71);
+  color: #ff4560;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  transition: transform 0.2s ease;
+  z-index: 11; /* Assicura che sia sopra altri elementi */
+}
+
+.selected-item button.remove-btn:hover {
+  transform: scale(1.1);
+}
+
+/* Text content within selected item - modificato per mostrare tutto il testo */
+.selected-item-text {
+  max-width: 100%;
+  word-wrap: break-word; /* Consente di andare a capo su parole lunghe */
+  white-space: normal; /* Permette di andare a capo */
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+/* Bottoni INFO e RELAZIONI */
+.item-buttons {
+  position: absolute;
+  bottom: 15px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 15px;
+}
+
+.item-buttons button {
+  background-color: white;
+  color: #f4a942;
+  font-weight: bold;
+  padding: 8px 15px;
+  border-radius: 20px; /* Bordi più arrotondati */
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  flex: 1;
+  min-width: 90px; /* Aumentato la larghezza minima per contenere "RELAZIONI" */
+  white-space: nowrap; /* Impedisce il wrapping del testo */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.item-buttons button:hover {
+  background-color: #ffe1b6;
+}
+
+/* Container per il rettangolo opzione e l'arco */
+.option-container {
+  position: absolute;
+  top: 110%; /* Posiziona il container sotto il box arancione */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Rettangolo dell'opzione */
+.option-box {
+  background-color: #ff4560;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* Arco che connette il rettangolo all'item */
+.option-arc {
+  margin-top: -2px;
+  z-index: 1;
+}
+.option-arc path {
+  stroke: #ff4560;
+  stroke-width: 2;
+  fill: none;
+}
+
+.option-line {
+  margin-top: -2px;
+}
+
+/* Menu a tendina per l'opzione */
+.dropdown-menu {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: white;
+  color: #333;
+  padding: 10px;
+  border-radius: 6px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+.dropdown-menu p {
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+.dropdown-menu ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
+.dropdown-menu li {
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.dropdown-menu li:hover {
+  text-decoration: underline;
+}
+
+/* Search Bar */
+.search-bar {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  gap: 10px;
+}
+.search-bar input {
+  padding: 10px;
+  width: 300px;
+  border-radius: 6px;
+  border: none;
+  outline: none;
+}
+.search-bar button {
+  padding: 10px 20px;
+  background-color: #d19eff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.search-bar button:hover {
+  background-color: #bb7aff;
+}
+
+/* Red Labels modificato per essere sotto il box arancione */
+.red-label-wrapper {
+  position: absolute;
+  top: 110%; /* Posiziona sotto il box arancione */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  z-index: 10;
 }
