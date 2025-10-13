@@ -1,7 +1,6 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useState } from 'react';
 import SearchBar from "./SearchBar.jsx";
-import EntityBox from "./EntityBox.jsx";
-import Connection from "./Connection.jsx";
+import Box from "./Box.jsx";
 import ConnectionManager from "./ConnectionManager.jsx";
 
 const MainContent = forwardRef(({
@@ -21,10 +20,40 @@ const MainContent = forwardRef(({
                                     setMenuOpenConnectionId,
                                     renderGlobalConnections,
                                     allConnections,
+                                    connectionPositions,
                                     searchQuery,
                                     setSearchQuery,
                                     setResults
                                 }, ref) => {
+    const [menuOpenForBox, setMenuOpenForBox] = useState({});
+
+    const toggleMenuForBox = (boxId, isOpen) => {
+        setMenuOpenForBox(prev => ({
+            ...prev,
+            [boxId]: isOpen
+        }));
+    };
+
+    // Stato dello zoom
+    const [zoom, setZoom] = useState(1);
+
+// Funzioni per aumentare/diminuire zoom
+    const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2));
+    const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
+
+// Gestione zoom da rotellina del mouse (Ctrl + scroll)
+    const handleWheel = (e) => {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            setZoom(prev => {
+                const newZoom = e.deltaY < 0
+                    ? Math.min(prev + 0.1, 2)
+                    : Math.max(prev - 0.1, 0.5);
+                return newZoom;
+            });
+        }
+    };
+
     return (
         <div
             ref={ref}
@@ -38,7 +67,6 @@ const MainContent = forwardRef(({
                 height: '100vh'
             }}
         >
-            {/* tutto il resto invariato */}
             <h2
                 style={{
                     textAlign: 'center',
@@ -63,9 +91,21 @@ const MainContent = forwardRef(({
                     padding: '20px',
                     position: 'relative',
                     backgroundColor: 'white',
-                    overflow: 'visible'
+                    overflow: 'auto',
                 }}
             >
+                {/*Parte gestione zoom dell'elemento.
+                <div
+                    onWheel={handleWheel}
+                    style={{
+                        width: `${zoom * 100}%`,
+                        height: `${zoom * 100}%`,
+                        transformOrigin: '0 0',
+                        transition: 'width 0.2s ease-out, height 0.2s ease-out',
+                    }}
+                >
+                TODO: DA MODIFICARE TUTTA PARTE BOX E POSIZIONAMENTO */}
+
                 <ConnectionManager
                     selectedItems={selectedItems}
                     allConnections={allConnections}
@@ -73,6 +113,7 @@ const MainContent = forwardRef(({
                     boxRefs={boxRefs}
                 />
 
+                {/* Render main items */}
                 {selectedItems.map((item, index) => {
                     if (boxRefs.current) {
                         boxRefs.current[item.id] = {
@@ -87,47 +128,114 @@ const MainContent = forwardRef(({
 
                     return (
                         <div key={item.id}>
-                            <EntityBox
-                                item={item}
-                                index={index}
-                                itemRef={(el) => (itemRefs.current[item.id] = el)}
+                            <Box
+                                boxData={{
+                                    id: item.id,
+                                    label: item.label,
+                                    uri: item.uri,
+                                    position: item.position,
+                                    type: 'entity',
+                                    connections: item.connections,
+                                    isDraggable: true
+                                }}
+                                boxRef={(el) => (itemRefs.current[item.id] = el)}
                                 onPositionChange={onPositionChange}
                                 onRemove={handleRemove}
                                 onOpenRelations={handleOpenRelations}
-                                menuOpenIndex={menuOpenIndex}
+                                menuOpen={menuOpenIndex === index}
+                                setMenuOpen={(isOpen) => {
+                                    if (isOpen) setMenuOpenIndex(index);
+                                    else setMenuOpenIndex(null);
+                                }}
                                 relations={relations}
                                 onRelationSelect={handleRelationSelect}
-                                setMenuOpenIndex={setMenuOpenIndex}
+                                onDeleteConnection={handleDeleteConnection}
+                                boxRefs={boxRefs}
+                                color="#f39c12"
                             />
 
+                            {/* Render connection boxes from connections */}
                             {item.connections?.map((connection) => (
-                                <Connection
-                                    key={connection.id}
-                                    relation={connection.relation}
-                                    target={connection.target}
-                                    sourceBox={itemRefs.current[item.id]}
-                                    onDelete={() =>
-                                        handleDeleteConnection(item.id, connection.id)
-                                    }
+                                <Box
+                                    key={`conn-${connection.id}`}
+                                    boxData={{
+                                        id: `${item.id}-${connection.id}`,
+                                        label: connection.target.label,
+                                        uri: connection.target.uri,
+                                        position: connection.position,
+                                        type: 'connection',
+                                        parentId: item.id,
+                                        connectionId: connection.id,
+                                        isDraggable: true
+                                    }}
+                                    onPositionChange={(boxId, newPos) => {
+                                        handleTargetMove(item.id, connection.id, newPos);
+                                    }}
                                     onTargetMove={handleTargetMove}
-                                    connectionId={connection.id}
-                                    sourceBoxId={item.id}
-                                    onOpenRelations={handleOpenRelations}
-                                    menuOpenConnectionId={menuOpenConnectionId}
-                                    setMenuOpenConnectionId={setMenuOpenConnectionId}
+                                    onRemove={() => handleDeleteConnection(item.id, connection.id)}
+                                    onOpenRelations={() => handleOpenRelations(`connection-box-${item.id}-${connection.id}`)}
+                                    menuOpen={menuOpenForBox[`${item.id}-${connection.id}`] || false}
+                                    setMenuOpen={(isOpen) => toggleMenuForBox(`${item.id}-${connection.id}`, isOpen)}
                                     relations={relations}
-                                    onSelect={handleRelationSelect}
+                                    onRelationSelect={(boxId, connData) => {
+                                        handleRelationSelect(boxId, {
+                                            ...connData,
+                                            sourceBoxId: boxId
+                                        });
+                                    }}
+                                    onDeleteConnection={handleDeleteConnection}
                                     boxRefs={boxRefs}
-                                    renderArrow={false}
+                                    color="#e67e22"
                                 />
                             ))}
                         </div>
                     );
                 })}
 
+                {/* Render global connections */}
+                {allConnections.map(connection => {
+                    const targetBoxId = `global-connection-box-${connection.sourceBoxId}-${connection.id}`;
+                    return (
+                        <Box
+                            key={targetBoxId}
+                            boxData={{
+                                id: targetBoxId,
+                                label: connection.target.label,
+                                uri: connection.target.uri,
+                                position: connectionPositions?.[`${connection.sourceBoxId}-${connection.id}`],
+                                type: 'global-connection',
+                                parentId: connection.sourceBoxId,
+                                connectionId: connection.id,
+                                isDraggable: true
+                            }}
+                            onPositionChange={(boxId, newPos) => {
+                                handleTargetMove(connection.sourceBoxId, connection.id, newPos);
+                            }}
+                            onTargetMove={handleTargetMove}
+                            onRemove={() => handleDeleteConnection(connection.sourceBoxId, connection.id)}
+                            onOpenRelations={() => handleOpenRelations(targetBoxId)}
+                            menuOpen={menuOpenConnectionId === targetBoxId}
+                            setMenuOpen={(isOpen) => {
+                                if (isOpen) setMenuOpenConnectionId(targetBoxId);
+                                else setMenuOpenConnectionId(null);
+                            }}
+                            relations={relations}
+                            onRelationSelect={(boxId, connData) => {
+                                handleRelationSelect(boxId, {
+                                    ...connData,
+                                    sourceBoxId: boxId
+                                });
+                            }}
+                            onDeleteConnection={handleDeleteConnection}
+                            boxRefs={boxRefs}
+                            color="#9b59b6"
+                        />
+                    );
+                })}
+
                 {renderGlobalConnections()}
             </div>
-
+            {/*</div>*/}
             <div
                 style={{
                     position: 'fixed',
@@ -149,6 +257,13 @@ const MainContent = forwardRef(({
                     setResults={setResults}
                 />
             </div>
+            {/*tasti zoom in e zoom out*/}
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <button onClick={handleZoomOut}>−</button>
+                <span>{Math.round(zoom * 100)}%</span>
+                <button onClick={handleZoomIn}>＋</button>
+            </div>
+
         </div>
     );
 });

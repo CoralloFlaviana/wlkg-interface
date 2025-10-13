@@ -42,11 +42,13 @@ const GlobalConnection = ({
         e.preventDefault();
         e.stopPropagation();
 
+        const containerRect = document.querySelector('.main-content').getBoundingClientRect();
         const rect = boxRef.current.getBoundingClientRect();
+
         setIsDragging(true);
         setDragOffset({
-            x: e.clientX - rect.left - 75,
-            y: e.clientY - rect.top - 30
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
         });
     };
 
