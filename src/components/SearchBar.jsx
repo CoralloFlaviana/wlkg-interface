@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import './SearchBar.css';
 
-//const API_BASE = import.meta.env.VITE_API_URL;
-//const API_BASE = '/api/query/';
-
 function SearchBar({ searchQuery, setSearchQuery, setResults }) {
-    const [isLoading, setIsLoading] = useState(false); // Stato di caricamento
+    const [isLoading, setIsLoading] = useState(false);
+    const [searchType, setSearchType] = useState('person');
 
-    // Funzione per fare la chiamata API
+    const searchTypeOptions = [
+        { value: 'person', label: 'Persona' },
+        { value: 'work', label: 'Opera' },
+        { value: 'subject', label: 'Soggetto' }
+    ];
+
     const fetchData = async () => {
         try {
             const queryParams = new URLSearchParams({
@@ -20,7 +23,6 @@ function SearchBar({ searchQuery, setSearchQuery, setResults }) {
                 k: 1,
             });
 
-            //const response = await fetch(`${API_BASE}/search_regex?label=${searchQuery}`);
             const response = await fetch(`/search_regex?label=${searchQuery}`);
             console.log('/search_regex?label=${}', searchQuery);
 
@@ -33,21 +35,20 @@ function SearchBar({ searchQuery, setSearchQuery, setResults }) {
             return data;
         } catch (error) {
             console.error("Errore nella chiamata API:", error);
-            return null; // Se c'è un errore, restituisci null
+            return null;
         }
     };
 
-    // Funzione per gestire la ricerca
     const handleSearch = async () => {
-        if (!searchQuery.trim()) return; // Evita ricerche vuote
-        setIsLoading(true); // Avvia il caricamento
-        console.log("Valore cercato:", searchQuery);
+        if (!searchQuery.trim()) return;
+        setIsLoading(true);
+        console.log("Valore cercato:", searchQuery, "Tipo:", searchType);
 
         try {
-            const data = await fetchData(); // Ora aspettiamo il risultato effettivo
+            const data = await fetchData();
 
             if (!data) {
-                setResults([]); // Se la chiamata fallisce, resetta i risultati
+                setResults([]);
                 return;
             }
 
@@ -62,7 +63,6 @@ function SearchBar({ searchQuery, setSearchQuery, setResults }) {
                 formattedResults = [];
             }
 
-            //todo NOTA: per test !!!
             if (formattedResults.length === 0) {
                 console.warn("Nessun risultato trovato. Uso dati fittizi.");
                 const fakeData = {
@@ -91,25 +91,48 @@ function SearchBar({ searchQuery, setSearchQuery, setResults }) {
                 console.log(formattedResults);
             }
 
-
             setResults(formattedResults);
             console.log("Risultati ricevuti:", formattedResults);
         } catch (error) {
             console.error("Errore nella chiamata API:", error);
             setResults([]);
         } finally {
-            setIsLoading(false); // Ferma il caricamento indipendentemente dal risultato
+            setIsLoading(false);
         }
     };
 
     return (
         <div className="search-bar-container">
+            <select
+                value={searchType}
+                onChange={(e) => setSearchType(e.target.value)}
+                style={{
+                    padding: '10px',
+                    borderRadius: '4px',
+                    border: '1px solid #ccc',
+                    backgroundColor: 'white',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                }}
+            >
+                {searchTypeOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                        {option.label}
+                    </option>
+                ))}
+            </select>
+
             <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                        handleSearch();
+                    }
+                }}
                 placeholder="Cerca qualcosa..."
-                disabled={isLoading} // Disabilita l'input durante il caricamento
+                disabled={isLoading}
             />
             <button onClick={handleSearch} disabled={isLoading}>
                 {isLoading ? "Caricamento..." : "Cerca"}

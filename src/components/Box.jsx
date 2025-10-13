@@ -2,36 +2,49 @@ import React, { useState, useRef, useEffect } from 'react';
 import DropdownMenu from './DropdownMenu.jsx';
 
 const Box = ({
-                 boxData,           // { id, label, uri, position, type, connections?, parentId?, connectionId?, isDraggable }
-                 boxRef,            // ref callback
-                 onPositionChange,  // (boxId, newPosition)
-                 onRemove,          // (boxId)
-                 onOpenRelations,   // (boxId)
-                 menuOpen,          // bool
-                 setMenuOpen,       // (bool)
-                 relations,         // array
-                 onRelationSelect,  // (boxId, connectionData)
-                 onDeleteConnection, // (sourceBoxId, connectionId)
-                 boxRefs,           // ref dict
-                 onTargetMove,      // per box di connessione
-                 color = '#f39c12'  // colore di base
+                 boxData,
+                 boxRef,
+                 onPositionChange,
+                 onRemove,
+                 onOpenRelations,
+                 menuOpen,
+                 setMenuOpen,
+                 relations,
+                 onRelationSelect,
+                 onDeleteConnection,
+                 boxRefs,
+                 onTargetMove,
+                 color = '#f39c12'
              }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [targetPosition, setTargetPosition] = useState(boxData.position || { x: Math.random() * 600 + 300, y: Math.random() * 300 + 200 });
     const internalRef = useRef(null);
 
+    // Determina l'ID del box basato sul tipo
+    const getBoxId = () => {
+        if (boxData.type === 'entity') {
+            return `entity-box-${boxData.id}`;
+        } else if (boxData.type === 'connection') {
+            return `connection-box-${boxData.parentId}-${boxData.connectionId}`;
+        } else if (boxData.type === 'global-connection') {
+            return `global-connection-box-${boxData.parentId}-${boxData.connectionId}`;
+        }
+        return `box-${boxData.id}`;
+    };
+
+    const boxId = getBoxId();
+
     // Aggiorna il ref dict quando la posizione cambia
     useEffect(() => {
-        const boxDOMId = `${boxData.type}-box-${boxData.id}`;
         if (boxRefs.current) {
-            boxRefs.current[boxDOMId] = {
+            boxRefs.current[boxId] = {
                 position: targetPosition,
                 uri: boxData.uri,
                 label: boxData.label
             };
         }
-    }, [targetPosition, boxData.uri, boxData.label, boxData.type, boxData.id, boxRefs]);
+    }, [targetPosition, boxData.uri, boxData.label, boxId, boxRefs]);
 
     const handleMouseDown = (e) => {
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
@@ -84,15 +97,13 @@ const Box = ({
         };
     }, [isDragging, dragOffset, boxData.id, boxData.parentId, boxData.connectionId, onPositionChange, onTargetMove]);
 
-    const boxId = `${boxData.type}-box-${boxData.id}`;
     const isDraggable = boxData.isDraggable !== false;
 
-    // Gestire il colore in base al tipo
+    // Determina il colore in base al tipo
     let boxColor = color;
     if (boxData.type === 'connection') boxColor = '#f39c12';
     if (boxData.type === 'global-connection') boxColor = '#9b59b6';
 
-    // Usa targetPosition per tutti i box (non solo quelli di connessione)
     const displayPosition = targetPosition || { x: 100, y: 100 };
 
     return (
@@ -161,7 +172,10 @@ const Box = ({
                 marginBottom: '8px',
                 textAlign: 'center',
                 pointerEvents: 'none',
-                lineHeight: '1.2'
+                lineHeight: '1.2',
+                fontSize: '12px',
+                maxWidth: '140px',
+                wordWrap: 'break-word'
             }}>
                 {boxData.label}
             </div>
@@ -195,7 +209,8 @@ const Box = ({
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        onOpenRelations(boxData.id);
+                        console.log('REL button clicked for box:', boxId, 'boxData.id:', boxData.id);
+                        onOpenRelations(boxId);
                         setMenuOpen(true);
                     }}
                     style={{
@@ -208,14 +223,18 @@ const Box = ({
                         fontSize: '10px'
                     }}
                 >
-                    RELAZIONI
+                    REL
                 </button>
 
                 {menuOpen && (
                     <DropdownMenu
                         sourceBoxId={boxData.uri}
+                        sourceBoxDOMId={boxId}
                         relations={relations}
-                        onSelect={(connectionData) => onRelationSelect(boxData.id, connectionData)}
+                        onSelect={(connectionData) => {
+                            console.log('Box.jsx onRelationSelect called with:', boxId, connectionData);
+                            onRelationSelect(boxId, connectionData);
+                        }}
                         closeMenu={() => setMenuOpen(false)}
                     />
                 )}
