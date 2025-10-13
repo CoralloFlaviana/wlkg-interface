@@ -1,34 +1,33 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import SearchBar from "./SearchBar.jsx";
 import EntityBox from "./EntityBox.jsx";
 import Connection from "./Connection.jsx";
-import GlobalConnection from "./GlobalConnection.jsx";
 import ConnectionManager from "./ConnectionManager.jsx";
 
-const MainContent = ({
-                         selectedItems,
-                         itemRefs,
-                         boxRefs,
-                         draggedItem,
-                         handleMouseDown,
-                         handleRemove,
-                         handleOpenRelations,
-                         menuOpenIndex,
-                         relations,
-                         handleRelationSelect,
-                         setMenuOpenIndex,
-                         handleDeleteConnection,
-                         handleTargetMove,
-                         menuOpenConnectionId,
-                         setMenuOpenConnectionId,
-                         renderGlobalConnections,
-                         allConnections,
-                         searchQuery,
-                         setSearchQuery,
-                         setResults
-                     }) => {
+const MainContent = forwardRef(({
+                                    selectedItems,
+                                    itemRefs,
+                                    boxRefs,
+                                    onPositionChange,
+                                    handleRemove,
+                                    handleOpenRelations,
+                                    menuOpenIndex,
+                                    relations,
+                                    handleRelationSelect,
+                                    setMenuOpenIndex,
+                                    handleDeleteConnection,
+                                    handleTargetMove,
+                                    menuOpenConnectionId,
+                                    setMenuOpenConnectionId,
+                                    renderGlobalConnections,
+                                    allConnections,
+                                    searchQuery,
+                                    setSearchQuery,
+                                    setResults
+                                }, ref) => {
     return (
         <div
+            ref={ref}
             className="main-content"
             style={{
                 flex: 1,
@@ -39,6 +38,7 @@ const MainContent = ({
                 height: '100vh'
             }}
         >
+            {/* tutto il resto invariato */}
             <h2
                 style={{
                     textAlign: 'center',
@@ -66,7 +66,6 @@ const MainContent = ({
                     overflow: 'visible'
                 }}
             >
-                {/* ConnectionManager gestisce tutte le frecce */}
                 <ConnectionManager
                     selectedItems={selectedItems}
                     allConnections={allConnections}
@@ -75,7 +74,6 @@ const MainContent = ({
                 />
 
                 {selectedItems.map((item, index) => {
-                    // Registra l'item nei boxRefs
                     if (boxRefs.current) {
                         boxRefs.current[item.id] = {
                             position: {
@@ -89,13 +87,11 @@ const MainContent = ({
 
                     return (
                         <div key={item.id}>
-                            {/* Box principale */}
                             <EntityBox
                                 item={item}
                                 index={index}
                                 itemRef={(el) => (itemRefs.current[item.id] = el)}
-                                isDragging={draggedItem === item.id}
-                                onMouseDown={(e) => handleMouseDown(e, item.id)}
+                                onPositionChange={onPositionChange}
                                 onRemove={handleRemove}
                                 onOpenRelations={handleOpenRelations}
                                 menuOpenIndex={menuOpenIndex}
@@ -104,7 +100,6 @@ const MainContent = ({
                                 setMenuOpenIndex={setMenuOpenIndex}
                             />
 
-                            {/* Connections dall'item principale - solo le box target, non le frecce */}
                             {item.connections?.map((connection) => (
                                 <Connection
                                     key={connection.id}
@@ -123,14 +118,13 @@ const MainContent = ({
                                     relations={relations}
                                     onSelect={handleRelationSelect}
                                     boxRefs={boxRefs}
-                                    renderArrow={false} // Disabilita il rendering della freccia
+                                    renderArrow={false}
                                 />
                             ))}
                         </div>
                     );
                 })}
 
-                {/* Render delle connessioni globali - solo le box target, non le frecce */}
                 {renderGlobalConnections()}
             </div>
 
@@ -157,6 +151,6 @@ const MainContent = ({
             </div>
         </div>
     );
-};
+});
 
 export default MainContent;

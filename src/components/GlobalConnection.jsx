@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import DropdownMenu from './DropdownMenu.jsx';
 
 const GlobalConnection = ({
@@ -16,6 +16,7 @@ const GlobalConnection = ({
     const [targetPosition, setTargetPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const boxRef = useRef(null);
 
     const targetBoxId = `global-connection-box-${connection.sourceBoxId}-${connection.id}`;
 
@@ -36,45 +37,58 @@ const GlobalConnection = ({
     }, [targetPosition, connection.target.uri, connection.target.label, targetBoxId, boxRefs]);
 
     const handleMouseDown = (e) => {
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+
         e.preventDefault();
         e.stopPropagation();
-        const rect = e.currentTarget.getBoundingClientRect();
+
+        const rect = boxRef.current.getBoundingClientRect();
         setIsDragging(true);
-        setDragOffset({ x: e.clientX - rect.left - rect.width / 2, y: e.clientY - rect.top - rect.height / 2 });
+        setDragOffset({
+            x: e.clientX - rect.left - 75,
+            y: e.clientY - rect.top - 30
+        });
     };
-
-    const handleMouseMove = (e) => {
-        if (!isDragging) return;
-        const containerRect = document.querySelector('.main-content').getBoundingClientRect();
-        const newPos = { x: e.clientX - containerRect.left - dragOffset.x, y: e.clientY - containerRect.top - dragOffset.y };
-        const clampedPos = { x: Math.max(75, Math.min(newPos.x, window.innerWidth - 300 - 75)), y: Math.max(30, Math.min(newPos.y, window.innerHeight - 200)) };
-        setTargetPosition(clampedPos);
-        onTargetMove(connection.sourceBoxId, connection.id, clampedPos);
-
-        // Aggiorna anche la posizione nel boxRefs
-        if (boxRefs.current[targetBoxId]) {
-            boxRefs.current[targetBoxId].position = clampedPos;
-        }
-    };
-
-    const handleMouseUp = () => { setIsDragging(false); setDragOffset({ x: 0, y: 0 }); };
 
     useEffect(() => {
-        if (isDragging) {
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-            return () => {
-                document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('mouseup', handleMouseUp);
-            };
-        }
-    }, [isDragging, dragOffset]);
+        if (!isDragging) return;
+
+        const handleMouseMove = (e) => {
+            const containerRect = document.querySelector('.main-content').getBoundingClientRect();
+
+            let newX = e.clientX - containerRect.left - dragOffset.x;
+            let newY = e.clientY - containerRect.top - dragOffset.y;
+
+            // Bounds checking
+            newX = Math.max(75, Math.min(newX, containerRect.width - 75));
+            newY = Math.max(30, Math.min(newY, containerRect.height - 50));
+
+            setTargetPosition({ x: newX, y: newY });
+            onTargetMove(connection.sourceBoxId, connection.id, { x: newX, y: newY });
+
+            if (boxRefs.current[targetBoxId]) {
+                boxRefs.current[targetBoxId].position = { x: newX, y: newY };
+            }
+        };
+
+        const handleMouseUp = () => {
+            setIsDragging(false);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging, dragOffset, connection.sourceBoxId, connection.id, targetBoxId, onTargetMove, boxRefs]);
 
     return (
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-            {/* Solo la box target - le frecce sono gestite dal ConnectionManager */}
             <div
                 id={targetBoxId}
+                ref={boxRef}
                 onMouseDown={handleMouseDown}
                 style={{
                     position: 'absolute',
@@ -104,11 +118,9 @@ const GlobalConnection = ({
                 <div
                     onClick={(e) => {
                         e.stopPropagation();
-                        // Rimuovi la box dai refs
                         if (boxRefs.current[targetBoxId]) {
                             delete boxRefs.current[targetBoxId];
                         }
-                        // Rimuovi tutte le connessioni globali legate a questa box
                         onDelete(connection.sourceBoxId, connection.id);
                     }}
                     style={{
@@ -132,22 +144,50 @@ const GlobalConnection = ({
                     ×
                 </div>
 
-                <div style={{ marginBottom: '8px', textAlign: 'center', lineHeight: '1.2' }}>
+                <div style={{
+                    marginBottom: '8px',
+                    textAlign: 'center',
+                    lineHeight: '1.2',
+                    pointerEvents: 'none'
+                }}>
                     {connection.target.label}
                 </div>
 
                 <div style={{ display: 'flex', gap: '6px' }}>
-                    <button onClick={(e) => { e.stopPropagation(); alert(`INFO di: ${connection.target.label}`); }}
-                            style={{ padding: '2px 6px', borderRadius: '4px', border: 'none', backgroundColor: 'rgba(255,255,255,0.3)', color: 'white', cursor: 'pointer', fontSize: '10px' }}>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            alert(`INFO di: ${connection.target.label}`);
+                        }}
+                        style={{
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            border: 'none',
+                            backgroundColor: 'rgba(255,255,255,0.3)',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontSize: '10px'
+                        }}
+                    >
                         INFO
                     </button>
 
-                    <button onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenRelations(targetBoxId);
-                        setMenuOpenConnectionId(targetBoxId);
-                    }}
-                            style={{ padding: '2px 6px', borderRadius: '4px', border: 'none', backgroundColor: 'rgba(255,255,255,0.3)', color: 'white', cursor: 'pointer', fontSize: '10px' }}>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenRelations(targetBoxId);
+                            setMenuOpenConnectionId(targetBoxId);
+                        }}
+                        style={{
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            border: 'none',
+                            backgroundColor: 'rgba(255,255,255,0.3)',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontSize: '10px'
+                        }}
+                    >
                         RELAZIONI
                     </button>
                 </div>
@@ -157,7 +197,6 @@ const GlobalConnection = ({
                         sourceBoxId={connection.target.uri}
                         relations={relations}
                         onSelect={(connectionData) => {
-                            // Passa l'ID corretto della box che ha fatto la richiesta
                             onSelect(targetBoxId, {
                                 ...connectionData,
                                 sourceBoxId: targetBoxId

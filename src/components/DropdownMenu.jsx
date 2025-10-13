@@ -21,7 +21,8 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId }) => {
 
         try {
             // sourceBoxId dovrebbe essere l'URI dell'entità
-            const url = `${API_BASE}/entityFind?rel=${encodeURIComponent(option.uri)}&o=${encodeURIComponent(sourceBoxId)}`;
+            //const url = `${API_BASE}/entityFind?rel=${encodeURIComponent(option.uri)}&o=${encodeURIComponent(sourceBoxId)}`;
+            const url = `/entityFind?rel=${encodeURIComponent(option.uri)}&o=${encodeURIComponent(sourceBoxId)}`;
             console.log("Making request to:", url);
 
             const response = await fetch(url);

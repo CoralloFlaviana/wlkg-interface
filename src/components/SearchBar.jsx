@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './SearchBar.css';
 
 //const API_BASE = import.meta.env.VITE_API_URL;
-const API_BASE = '/api/query/';
+//const API_BASE = '/api/query/';
 
 function SearchBar({ searchQuery, setSearchQuery, setResults }) {
     const [isLoading, setIsLoading] = useState(false); // Stato di caricamento
@@ -20,7 +20,8 @@ function SearchBar({ searchQuery, setSearchQuery, setResults }) {
                 k: 1,
             });
 
-            const response = await fetch(`${API_BASE}/search_regex?label=${searchQuery}`);
+            //const response = await fetch(`${API_BASE}/search_regex?label=${searchQuery}`);
+            const response = await fetch(`/search_regex?label=${searchQuery}`);
             console.log('/search_regex?label=${}', searchQuery);
 
             if (!response.ok) {
