@@ -1,11 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
+import html2canvas from 'html2canvas';
 import SearchResults from './components/SearchResults.jsx';
 import MainContent from './components/MainContent.jsx';
 import GlobalConnection from './components/GlobalConnection.jsx';
 
-//const API_BASE = import.meta.env.VITE_API_URL;
 const API_BASE = '/api/query/';
-
 
 function App() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -15,54 +14,60 @@ function App() {
     const [menuOpenIndex, setMenuOpenIndex] = useState(null);
     const [menuOpenConnectionId, setMenuOpenConnectionId] = useState(null);
     const itemRefs = useRef({});
-    const boxRefs = useRef({}); // Traccia tutte le box
-    const [draggedItem, setDraggedItem] = useState(null);
-    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const boxRefs = useRef({});
     const [connectionPositions, setConnectionPositions] = useState({});
-    const [allConnections, setAllConnections] = useState([]); // Connessioni globali
+    const [allConnections, setAllConnections] = useState([]);
+
+    // Ref per MainContent
+    const mainContentRef = useRef(null);
+
+    // Funzione screenshot
+    const handleScreenshot = async () => {
+        if (!mainContentRef.current) return;
+
+        try {
+            const canvas = await html2canvas(mainContentRef.current, {
+                useCORS: true,
+                scale: 2,
+                backgroundColor: '#ffffff',
+            });
+
+            const dataURL = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = 'main-content.png';
+            link.click();
+        } catch (err) {
+            console.error('Errore nello screenshot:', err);
+        }
+    };
 
     const handleOpenRelations = async (boxId) => {
-        console.log("handleOpenRelations called with boxId:", boxId);
-
         let uri;
 
-        // Se è un item principale
         const mainItem = selectedItems.find(item => item.id === boxId);
         if (mainItem) {
             uri = mainItem.uri;
-            console.log("Found main item:", mainItem.label, "URI:", uri);
-        }
-        // Se è una connection box
-        else if (boxRefs.current[boxId]) {
+        } else if (boxRefs.current[boxId]) {
             uri = boxRefs.current[boxId].uri;
-            console.log("Found in boxRefs:", boxRefs.current[boxId].label, "URI:", uri);
-        }
-        else {
+        } else {
             console.error("Box non trovata:", boxId);
-            console.log("Available boxRefs:", Object.keys(boxRefs.current));
-            console.log("Available selectedItems:", selectedItems.map(item => ({ id: item.id, label: item.label })));
             return;
         }
 
         try {
-            const url = `${API_BASE}/rel?ris=${encodeURIComponent(uri)}`;
-            console.log("Making relations request to:", url);
-
-            const response = await fetch(url);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            //const url = `${API_BASE}/rel?ris=${encodeURIComponent(uri)}`;
+            const response = await fetch(`/rel?ris=${encodeURIComponent(uri)}`);
+            //const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
             const data = await response.json();
-            console.log("Relations API response:", data);
 
             const resultOptions = data.results.map(result => ({
-                label: result.rel?.value?.split('#')[1] || '', //.includes('#') ? url.substring(url.indexOf('#') + 1) : url
+                label: result.rel?.value?.split('#')[1] || '',
                 uri: result.rel?.value || ''
             }));
 
-            console.log("Processed relations:", resultOptions);
             setRelations(resultOptions);
 
             if (mainItem) {
@@ -78,7 +83,6 @@ function App() {
     const handleRelationSelect = (sourceBoxId, connectionData) => {
         const newConnectionId = `conn-${Date.now()}`;
 
-        // Se è una connessione da un item principale
         const mainItem = selectedItems.find(item => item.id === sourceBoxId);
         if (mainItem) {
             const itemIndex = selectedItems.indexOf(mainItem);
@@ -96,13 +100,10 @@ function App() {
                         : item
                 )
             );
-        }
-        // Se è una connessione da una connection box
-        else {
-            // Aggiungi alla lista globale delle connessioni
+        } else {
             setAllConnections(prev => [...prev, {
                 id: newConnectionId,
-                sourceBoxId: sourceBoxId, // Questo deve essere l'ID della box che ha fatto la richiesta
+                sourceBoxId: sourceBoxId,
                 ...connectionData
             }]);
         }
@@ -112,7 +113,6 @@ function App() {
     };
 
     const handleDeleteConnection = (sourceBoxId, connectionId) => {
-        // Rimuovi dalle connessioni degli item principali
         setSelectedItems(prev =>
             prev.map(item => {
                 if (item.id === sourceBoxId) {
@@ -122,7 +122,6 @@ function App() {
             })
         );
 
-        // Rimuovi dalle connessioni globali
         setAllConnections(prev => prev.filter(conn => !(conn.sourceBoxId === sourceBoxId && conn.id === connectionId)));
 
         setConnectionPositions(prev => {
@@ -146,79 +145,30 @@ function App() {
             return newPositions;
         });
 
-        // Rimuovi anche le box correlate dai refs
         Object.keys(boxRefs.current).forEach(key => {
-            if (key.startsWith(itemId + '-')) {
-                delete boxRefs.current[key];
-            }
+            if (key.startsWith(itemId + '-')) delete boxRefs.current[key];
         });
 
-        // Rimuovi le connessioni globali che originano da questo item
         setAllConnections(prev => prev.filter(conn => !conn.sourceBoxId.startsWith(itemId)));
     };
 
-    const handleMouseDown = (e, itemId) => {
-        if (e.target.tagName === 'BUTTON') return;
-        const item = selectedItems.find(item => item.id === itemId);
-        const rect = e.currentTarget.getBoundingClientRect();
-        setDraggedItem(itemId);
-        setDragOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    };
-
-    const handleMouseMove = (e) => {
-        if (!draggedItem) return;
-        const containerRect = document.querySelector('.main-content').getBoundingClientRect();
-        const newX = e.clientX - containerRect.left - dragOffset.x;
-        const newY = e.clientY - containerRect.top - dragOffset.y;
+    const handlePositionChange = (itemId, newPosition) => {
         setSelectedItems(prev =>
             prev.map(item =>
-                item.id === draggedItem ? {
-                    ...item,
-                    position: { x: Math.max(0, newX), y: Math.max(0, newY) }
-                } : item
+                item.id === itemId
+                    ? { ...item, position: newPosition }
+                    : item
             )
         );
     };
 
-    const handleMouseUp = () => {
-        setDraggedItem(null);
-        setDragOffset({ x: 0, y: 0 });
-    };
-
-    useEffect(() => {
-        if (draggedItem) {
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-            return () => {
-                document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('mouseup', handleMouseUp);
-            };
-        }
-    }, [draggedItem, dragOffset]);
-
-    // Funzione per ottenere la posizione di una box
     const getBoxPosition = (boxId) => {
-        console.log("Cercando posizione per boxId:", boxId);
-        console.log("BoxRefs disponibili:", Object.keys(boxRefs.current));
-
-        // Prima controlla se è un item principale
         const mainItem = selectedItems.find(item => item.id === boxId);
-        if (mainItem && mainItem.position) {
-            console.log("Trovato main item:", mainItem.label);
-            return { x: mainItem.position.x + 75, y: mainItem.position.y + 40 }; // Centro della box
-        }
-
-        // Poi controlla nei box refs (connection boxes)
-        if (boxRefs.current[boxId]) {
-            console.log("Trovato in boxRefs:", boxRefs.current[boxId].label);
-            return boxRefs.current[boxId].position;
-        }
-
-        console.log("Box non trovata per ID:", boxId);
+        if (mainItem && mainItem.position) return { x: mainItem.position.x + 75, y: mainItem.position.y + 40 };
+        if (boxRefs.current[boxId]) return boxRefs.current[boxId].position;
         return null;
     };
 
-    // Render delle connessioni globali (da connection box a connection box)
     const renderGlobalConnections = () => {
         return allConnections.map(connection => {
             const sourcePos = getBoxPosition(connection.sourceBoxId);
@@ -254,35 +204,54 @@ function App() {
             fontFamily: 'Arial, sans-serif',
             overflow: 'hidden'
         }}>
-            {/* Sidebar risultati */}
             <SearchResults
                 results={results}
                 onSelectResult={handleSelectResult}
             />
 
-            {/* Main content */}
-            <MainContent
-                selectedItems={selectedItems}
-                itemRefs={itemRefs}
-                boxRefs={boxRefs}
-                draggedItem={draggedItem}
-                handleMouseDown={handleMouseDown}
-                handleRemove={handleRemove}
-                handleOpenRelations={handleOpenRelations}
-                menuOpenIndex={menuOpenIndex}
-                relations={relations}
-                handleRelationSelect={handleRelationSelect}
-                setMenuOpenIndex={setMenuOpenIndex}
-                handleDeleteConnection={handleDeleteConnection}
-                handleTargetMove={handleTargetMove}
-                menuOpenConnectionId={menuOpenConnectionId}
-                setMenuOpenConnectionId={setMenuOpenConnectionId}
-                renderGlobalConnections={renderGlobalConnections}
-                allConnections={allConnections}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                setResults={setResults}
-            />
+            <div style={{ position: 'relative', flex: 1 }}>
+                <MainContent
+                    ref={mainContentRef}
+                    selectedItems={selectedItems}
+                    itemRefs={itemRefs}
+                    boxRefs={boxRefs}
+                    onPositionChange={handlePositionChange}
+                    handleRemove={handleRemove}
+                    handleOpenRelations={handleOpenRelations}
+                    menuOpenIndex={menuOpenIndex}
+                    relations={relations}
+                    handleRelationSelect={handleRelationSelect}
+                    setMenuOpenIndex={setMenuOpenIndex}
+                    handleDeleteConnection={handleDeleteConnection}
+                    handleTargetMove={handleTargetMove}
+                    menuOpenConnectionId={menuOpenConnectionId}
+                    setMenuOpenConnectionId={setMenuOpenConnectionId}
+                    renderGlobalConnections={renderGlobalConnections}
+                    allConnections={allConnections}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    setResults={setResults}
+                />
+
+                <button
+                    onClick={handleScreenshot}
+                    style={{
+                        position: 'absolute',
+                        top: 10,
+                        right: 10,
+                        zIndex: 1000,
+                        background: '#2563eb',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '10px 16px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                    }}
+                >
+                    Screenshot
+                </button>
+            </div>
         </div>
     );
 }

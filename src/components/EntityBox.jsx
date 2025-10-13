@@ -1,12 +1,11 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import DropdownMenu from './DropdownMenu.jsx';
 
 const EntityBox = ({
                        item,
                        index,
                        itemRef,
-                       isDragging,
-                       onMouseDown,
+                       onPositionChange,
                        onRemove,
                        onOpenRelations,
                        menuOpenIndex,
@@ -14,12 +13,63 @@ const EntityBox = ({
                        onRelationSelect,
                        setMenuOpenIndex
                    }) => {
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const boxRef = useRef(null);
+
+    const handleMouseDown = (e) => {
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+
+        const rect = boxRef.current.getBoundingClientRect();
+        const container = boxRef.current.offsetParent.getBoundingClientRect();
+
+        setIsDragging(true);
+        setDragOffset({
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        });
+
+        e.preventDefault();
+    };
+
+    useEffect(() => {
+        if (!isDragging) return;
+
+        const handleMouseMove = (e) => {
+            const container = boxRef.current.offsetParent.getBoundingClientRect();
+
+            let newX = e.clientX - container.left - dragOffset.x;
+            let newY = e.clientY - container.top - dragOffset.y;
+
+            // Bounds checking
+            newX = Math.max(0, Math.min(newX, container.width - 150));
+            newY = Math.max(0, Math.min(newY, container.height - 80));
+
+            onPositionChange(item.id, { x: newX, y: newY });
+        };
+
+        const handleMouseUp = () => {
+            setIsDragging(false);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging, dragOffset, item.id, onPositionChange]);
+
     return (
         <div
             id={`entity-box-${item.id}`}
-            ref={itemRef}
+            ref={(el) => {
+                boxRef.current = el;
+                if (itemRef) itemRef(el);
+            }}
             uri={item.uri}
-            onMouseDown={onMouseDown}
+            onMouseDown={handleMouseDown}
             style={{
                 position: 'absolute',
                 left: item.position?.x || 100,
@@ -41,15 +91,20 @@ const EntityBox = ({
                 transition: isDragging ? 'none' : 'all 0.2s ease',
                 userSelect: 'none'
             }}
-
         >
-            <div style={{ marginBottom: '8px', textAlign: 'center' }}>
+            <div style={{
+                marginBottom: '8px',
+                textAlign: 'center',
+                pointerEvents: 'none'
+            }}>
                 {item.label}
             </div>
 
             <button
-                onClick={(e) => { e.stopPropagation(); onRemove(item.id); }}
-
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove(item.id);
+                }}
                 style={{
                     position: 'absolute',
                     top: '4px',
@@ -65,15 +120,26 @@ const EntityBox = ({
                     fontSize: '12px',
                     fontWeight: 'bold',
                     cursor: 'pointer',
-                    zIndex: 1002
+                    zIndex: 1002,
+                    border: 'none',
+                    padding: 0
                 }}
             >
                 ×
             </button>
 
-            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+            <div style={{
+                display: 'flex',
+                gap: '8px',
+                marginTop: '8px',
+                position: 'relative',
+                zIndex: 2
+            }}>
                 <button
-                    onClick={(e) => { e.stopPropagation(); alert(`INFO di: ${item.label}`); }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        alert(`INFO di: ${item.label}`);
+                    }}
                     style={{
                         padding: '4px 8px',
                         borderRadius: '4px',
@@ -88,7 +154,10 @@ const EntityBox = ({
                 </button>
 
                 <button
-                    onClick={(e) => { e.stopPropagation(); onOpenRelations(item.id);console.log(item.uri, item.id); }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenRelations(item.id);
+                    }}
                     style={{
                         padding: '4px 8px',
                         borderRadius: '4px',
