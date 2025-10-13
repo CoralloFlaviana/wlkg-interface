@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 
-//const API_BASE = import.meta.env.VITE_API_URL;
 const API_BASE = '/api/query/';
 
-const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId }) => {
-    // sourceBoxId dovrebbe essere l'URI dell'entità, non l'ID del box DOM
+const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDOMId }) => {
+    // sourceBoxId dovrebbe essere l'URI dell'entità
+    // sourceBoxDOMId dovrebbe essere l'ID HTML della box nel DOM
     const [selectedFirstLevel, setSelectedFirstLevel] = useState(null);
     const [secondLevelOptions, setSecondLevelOptions] = useState([]);
     const [showSecondLevel, setShowSecondLevel] = useState(false);
@@ -14,14 +14,13 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId }) => {
     const handleFirstLevelSelect = async (option) => {
         console.log("Selecting first level option:", option);
         console.log("Source entity URI (sourceBoxId):", sourceBoxId);
+        console.log("Source box DOM ID (sourceBoxDOMId):", sourceBoxDOMId);
 
         setSelectedFirstLevel(option);
         setLoading(true);
         setError(null);
 
         try {
-            // sourceBoxId dovrebbe essere l'URI dell'entità
-            //const url = `${API_BASE}/entityFind?rel=${encodeURIComponent(option.uri)}&o=${encodeURIComponent(sourceBoxId)}`;
             const url = `/entityFind?rel=${encodeURIComponent(option.uri)}&o=${encodeURIComponent(sourceBoxId)}`;
             console.log("Making request to:", url);
 
@@ -55,13 +54,14 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId }) => {
 
     const handleSecondLevelSelect = (option) => {
         console.log("Selecting second level option:", option);
+        console.log("Passing sourceBoxId:", sourceBoxDOMId);
+
         onSelect({
             relation: selectedFirstLevel,
             target: {
                 label: option.label,
                 uri: option.uri
-            },
-            sourceBoxId: sourceBoxId
+            }
         });
         closeMenu();
     };

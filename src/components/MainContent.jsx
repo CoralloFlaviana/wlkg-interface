@@ -26,6 +26,7 @@ const MainContent = forwardRef(({
                                     setResults
                                 }, ref) => {
     const [menuOpenForBox, setMenuOpenForBox] = useState({});
+    const [zoom, setZoom] = useState(1);
 
     const toggleMenuForBox = (boxId, isOpen) => {
         setMenuOpenForBox(prev => ({
@@ -34,14 +35,9 @@ const MainContent = forwardRef(({
         }));
     };
 
-    // Stato dello zoom
-    const [zoom, setZoom] = useState(1);
-
-// Funzioni per aumentare/diminuire zoom
     const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2));
     const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
 
-// Gestione zoom da rotellina del mouse (Ctrl + scroll)
     const handleWheel = (e) => {
         if (e.ctrlKey) {
             e.preventDefault();
@@ -94,18 +90,7 @@ const MainContent = forwardRef(({
                     overflow: 'auto',
                 }}
             >
-                {/*Parte gestione zoom dell'elemento.
-                <div
-                    onWheel={handleWheel}
-                    style={{
-                        width: `${zoom * 100}%`,
-                        height: `${zoom * 100}%`,
-                        transformOrigin: '0 0',
-                        transition: 'width 0.2s ease-out, height 0.2s ease-out',
-                    }}
-                >
-                TODO: DA MODIFICARE TUTTA PARTE BOX E POSIZIONAMENTO */}
-
+                {/* Connection Manager - disegna le frecce */}
                 <ConnectionManager
                     selectedItems={selectedItems}
                     allConnections={allConnections}
@@ -113,13 +98,13 @@ const MainContent = forwardRef(({
                     boxRefs={boxRefs}
                 />
 
-                {/* Render main items */}
+                {/* Render main items (box arancioni) */}
                 {selectedItems.map((item, index) => {
                     if (boxRefs.current) {
-                        boxRefs.current[item.id] = {
+                        boxRefs.current[`entity-box-${item.id}`] = {
                             position: {
-                                x: (item.position?.x || 100) + 75,
-                                y: (item.position?.y || 100) + 40
+                                x: (item.position?.x || 100),
+                                y: (item.position?.y || 100)
                             },
                             uri: item.uri,
                             label: item.label
@@ -128,6 +113,7 @@ const MainContent = forwardRef(({
 
                     return (
                         <div key={item.id}>
+                            {/* Box entità principale */}
                             <Box
                                 boxData={{
                                     id: item.id,
@@ -154,7 +140,7 @@ const MainContent = forwardRef(({
                                 color="#f39c12"
                             />
 
-                            {/* Render connection boxes from connections */}
+                            {/* Render connection boxes (box arancioni dalle connessioni) */}
                             {item.connections?.map((connection) => (
                                 <Box
                                     key={`conn-${connection.id}`}
@@ -177,22 +163,17 @@ const MainContent = forwardRef(({
                                     menuOpen={menuOpenForBox[`${item.id}-${connection.id}`] || false}
                                     setMenuOpen={(isOpen) => toggleMenuForBox(`${item.id}-${connection.id}`, isOpen)}
                                     relations={relations}
-                                    onRelationSelect={(boxId, connData) => {
-                                        handleRelationSelect(boxId, {
-                                            ...connData,
-                                            sourceBoxId: boxId
-                                        });
-                                    }}
+                                    onRelationSelect={handleRelationSelect}
                                     onDeleteConnection={handleDeleteConnection}
                                     boxRefs={boxRefs}
-                                    color="#e67e22"
+                                    color="#f39c12"
                                 />
                             ))}
                         </div>
                     );
                 })}
 
-                {/* Render global connections */}
+                {/* Render global connections (box viola) */}
                 {allConnections.map(connection => {
                     const targetBoxId = `global-connection-box-${connection.sourceBoxId}-${connection.id}`;
                     return (
@@ -220,22 +201,16 @@ const MainContent = forwardRef(({
                                 else setMenuOpenConnectionId(null);
                             }}
                             relations={relations}
-                            onRelationSelect={(boxId, connData) => {
-                                handleRelationSelect(boxId, {
-                                    ...connData,
-                                    sourceBoxId: boxId
-                                });
-                            }}
+                            onRelationSelect={handleRelationSelect}
                             onDeleteConnection={handleDeleteConnection}
                             boxRefs={boxRefs}
                             color="#9b59b6"
                         />
                     );
                 })}
-
-                {renderGlobalConnections()}
             </div>
-            {/*</div>*/}
+
+            {/* Search Bar - fixed bottom */}
             <div
                 style={{
                     position: 'fixed',
@@ -257,15 +232,57 @@ const MainContent = forwardRef(({
                     setResults={setResults}
                 />
             </div>
-            {/*tasti zoom in e zoom out*/}
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <button onClick={handleZoomOut}>−</button>
-                <span>{Math.round(zoom * 100)}%</span>
-                <button onClick={handleZoomIn}>＋</button>
-            </div>
 
+            {/* Zoom controls */}
+            <div style={{
+                position: 'fixed',
+                bottom: '20px',
+                right: '20px',
+                display: 'flex',
+                gap: '10px',
+                alignItems: 'center',
+                backgroundColor: 'white',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                zIndex: 25
+            }}>
+                <button
+                    onClick={handleZoomOut}
+                    style={{
+                        padding: '6px 10px',
+                        backgroundColor: '#3498db',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '16px'
+                    }}
+                >
+                    −
+                </button>
+                <span style={{ fontSize: '14px', fontWeight: 'bold' }}>
+                    {Math.round(zoom * 100)}%
+                </span>
+                <button
+                    onClick={handleZoomIn}
+                    style={{
+                        padding: '6px 10px',
+                        backgroundColor: '#3498db',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '16px'
+                    }}
+                >
+                    ＋
+                </button>
+            </div>
         </div>
     );
 });
+
+MainContent.displayName = 'MainContent';
 
 export default MainContent;
