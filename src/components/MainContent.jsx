@@ -23,7 +23,8 @@ const MainContent = forwardRef(({
                                     connectionPositions,
                                     searchQuery,
                                     setSearchQuery,
-                                    setResults
+                                    setResults,
+                                    entityTypes
                                 }, ref) => {
     const [menuOpenForBox, setMenuOpenForBox] = useState({});
     const [zoom, setZoom] = useState(1);
@@ -230,10 +231,11 @@ const MainContent = forwardRef(({
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
                     setResults={setResults}
+                    entityTypes={entityTypes}
                 />
             </div>
 
-            {/* Zoom controls */}
+            {/* Zoom controls e Clear All */}
             <div style={{
                 position: 'fixed',
                 bottom: '20px',
@@ -241,43 +243,75 @@ const MainContent = forwardRef(({
                 display: 'flex',
                 gap: '10px',
                 alignItems: 'center',
-                backgroundColor: 'white',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                 zIndex: 25
             }}>
+                {/* Clear All Button */}
                 <button
-                    onClick={handleZoomOut}
+                    onClick={() => {
+                        if (window.confirm('Sei sicuro di voler cancellare tutti gli elementi dalla lavagna?')) {
+                            handleRemove('all');
+                        }
+                    }}
                     style={{
-                        padding: '6px 10px',
-                        backgroundColor: '#3498db',
+                        padding: '8px 16px',
+                        backgroundColor: '#e74c3c',
                         color: 'white',
                         border: 'none',
-                        borderRadius: '4px',
+                        borderRadius: '8px',
                         cursor: 'pointer',
-                        fontSize: '16px'
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        transition: 'all 0.2s ease'
                     }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#c0392b'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#e74c3c'}
                 >
-                    −
+                    Cancella Tutto
                 </button>
-                <span style={{ fontSize: '14px', fontWeight: 'bold' }}>
-                    {Math.round(zoom * 100)}%
-                </span>
-                <button
-                    onClick={handleZoomIn}
-                    style={{
-                        padding: '6px 10px',
-                        backgroundColor: '#3498db',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '16px'
-                    }}
-                >
-                    ＋
-                </button>
+
+                {/* Zoom Controls */}
+                <div style={{
+                    display: 'flex',
+                    gap: '10px',
+                    alignItems: 'center',
+                    backgroundColor: 'white',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}>
+                    <button
+                        onClick={handleZoomOut}
+                        style={{
+                            padding: '6px 10px',
+                            backgroundColor: '#3498db',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '16px'
+                        }}
+                    >
+                        −
+                    </button>
+                    <span style={{ fontSize: '14px', fontWeight: 'bold' }}>
+                        {Math.round(zoom * 100)}%
+                    </span>
+                    <button
+                        onClick={handleZoomIn}
+                        style={{
+                            padding: '6px 10px',
+                            backgroundColor: '#3498db',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '16px'
+                        }}
+                    >
+                        ＋
+                    </button>
+                </div>
             </div>
         </div>
     );

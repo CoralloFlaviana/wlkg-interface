@@ -17,9 +17,42 @@ function App() {
     const boxRefs = useRef({});
     const [connectionPositions, setConnectionPositions] = useState({});
     const [allConnections, setAllConnections] = useState([]);
+    const [entityTypes, setEntityTypes] = useState([]);
 
     // Ref per MainContent
     const mainContentRef = useRef(null);
+
+    // Carica le entità disponibili all'avvio
+    React.useEffect(() => {
+        const fetchEntityTypes = async () => {
+            try {
+                const response = await fetch('/info_entities');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const data = await response.json();
+
+                // Trasforma l'oggetto entities in un array per il menu a tendina
+                const types = Object.entries(data.entities).map(([key, entity]) => ({
+                    value: key,
+                    label: entity.label,
+                    color: entity.color,
+                    type: entity.type
+                }));
+                console.log(types);
+                setEntityTypes(types);
+            } catch (error) {
+                console.error("Errore caricando i tipi di entità:", error);
+                // Fallback ai valori di default
+                setEntityTypes([
+                    { value: 'person', label: 'Persona', color: '#f39c12' },
+                    { value: 'work', label: 'Libro', color: '#3498db' },
+                    { value: 'subject', label: 'Topic', color: '#e74c3c' }
+                ]);
+            }
+        };
+
+        fetchEntityTypes();
+    }, []);
 
     // Funzione screenshot
     const handleScreenshot = async () => {
@@ -56,9 +89,7 @@ function App() {
         }
 
         try {
-            //const url = `${API_BASE}/rel?ris=${encodeURIComponent(uri)}`;
             const response = await fetch(`/rel?ris=${encodeURIComponent(uri)}`);
-            //const response = await fetch(url);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
             const data = await response.json();
@@ -136,6 +167,17 @@ function App() {
     };
 
     const handleRemove = (itemId) => {
+        // Se itemId è 'all', cancella tutto
+        if (itemId === 'all') {
+            setSelectedItems([]);
+            setConnectionPositions({});
+            setAllConnections([]);
+            boxRefs.current = {};
+            itemRefs.current = {};
+            return;
+        }
+
+        // Altrimenti cancella solo l'item specifico
         setSelectedItems(prev => prev.filter(item => item.id !== itemId));
         setConnectionPositions(prev => {
             const newPositions = { ...prev };
@@ -193,6 +235,7 @@ function App() {
     };
 
     const handleSelectResult = (newItem) => {
+        console.log('Adding new item with type:', newItem);
         setSelectedItems(prev => [...prev, newItem]);
     };
 
@@ -231,6 +274,7 @@ function App() {
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
                     setResults={setResults}
+                    entityTypes={entityTypes}
                 />
 
                 <button

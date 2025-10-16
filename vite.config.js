@@ -24,6 +24,11 @@ export default defineConfig({
                 target: 'http://0.0.0.0:8000/query/',
                 changeOrigin: true,
                 secure: false,
+            },
+            '/info_entities':{
+                target: 'http://0.0.0.0:8000/',
+                changeOrigin: true,
+                secure: false,
             }
         },
     },
