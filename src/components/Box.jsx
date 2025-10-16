@@ -41,10 +41,11 @@ const Box = ({
             boxRefs.current[boxId] = {
                 position: targetPosition,
                 uri: boxData.uri,
-                label: boxData.label
+                label: boxData.label,
+                type: boxData.entityType || boxData.type || 'unknown'
             };
         }
-    }, [targetPosition, boxData.uri, boxData.label, boxId, boxRefs]);
+    }, [targetPosition, boxData.uri, boxData.label, boxData.entityType, boxData.type, boxId, boxRefs]);
 
     const handleMouseDown = (e) => {
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
@@ -101,8 +102,23 @@ const Box = ({
 
     // Determina il colore in base al tipo
     let boxColor = color;
-    if (boxData.type === 'connection') boxColor = '#f39c12';
-    if (boxData.type === 'global-connection') boxColor = '#9b59b6';
+    if (boxData.type === 'connection') {
+        // Per le connessioni, usa un colore leggermente più scuro del colore base
+        boxColor = adjustColor(color, -20);
+    }
+    if (boxData.type === 'global-connection') {
+        boxColor = '#9b59b6';
+    }
+
+    // Funzione helper per scurire/schiarire un colore
+    function adjustColor(color, amount) {
+        const clamp = (val) => Math.min(Math.max(val, 0), 255);
+        const num = parseInt(color.replace('#', ''), 16);
+        const r = clamp((num >> 16) + amount);
+        const g = clamp(((num >> 8) & 0x00FF) + amount);
+        const b = clamp((num & 0x0000FF) + amount);
+        return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+    }
 
     const displayPosition = targetPosition || { x: 100, y: 100 };
 
@@ -121,7 +137,7 @@ const Box = ({
                 top: displayPosition.y,
                 width: '150px',
                 height: '80px',
-                backgroundColor: isDragging ? (boxColor === '#9b59b6' ? '#8e44ad' : '#e67e22') : boxColor,
+                backgroundColor: isDragging ? adjustColor(boxColor, -20) : boxColor,
                 borderRadius: '12px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -135,7 +151,7 @@ const Box = ({
                 transform: isDragging ? 'scale(1.05)' : 'scale(1)',
                 transition: isDragging ? 'none' : 'all 0.2s ease',
                 userSelect: 'none',
-                border: isDragging && boxData.type === 'global-connection' ? '2px solid #7d3c98' : isDragging ? '2px solid #d35400' : '2px solid transparent'
+                border: isDragging ? '2px solid rgba(0,0,0,0.3)' : '2px solid transparent'
             }}
         >
             {/* Remove button */}
@@ -179,6 +195,24 @@ const Box = ({
             }}>
                 {boxData.label}
             </div>
+
+            {/* Type badge */}
+            {boxData.entityType && boxData.type === 'entity' && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: '4px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    backgroundColor: 'rgba(0,0,0,0.2)',
+                    color: 'white',
+                    fontSize: '8px',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    pointerEvents: 'none'
+                }}>
+                    {boxData.entityType}
+                </div>
+            )}
 
             {/* Buttons */}
             <div style={{

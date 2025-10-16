@@ -17,9 +17,42 @@ function App() {
     const boxRefs = useRef({});
     const [connectionPositions, setConnectionPositions] = useState({});
     const [allConnections, setAllConnections] = useState([]);
+    const [entityTypes, setEntityTypes] = useState([]);
 
     // Ref per MainContent
     const mainContentRef = useRef(null);
+
+    // Carica le entità disponibili all'avvio
+    React.useEffect(() => {
+        const fetchEntityTypes = async () => {
+            try {
+                const response = await fetch('/info_entities');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const data = await response.json();
+
+                // Trasforma l'oggetto entities in un array per il menu a tendina
+                const types = Object.entries(data.entities).map(([key, entity]) => ({
+                    value: key,
+                    label: entity.label,
+                    color: entity.color,
+                    type: entity.type
+                }));
+                console.log(types);
+                setEntityTypes(types);
+            } catch (error) {
+                console.error("Errore caricando i tipi di entità:", error);
+                // Fallback ai valori di default
+                setEntityTypes([
+                    { value: 'person', label: 'Persona', color: '#f39c12' },
+                    { value: 'work', label: 'Libro', color: '#3498db' },
+                    { value: 'subject', label: 'Topic', color: '#e74c3c' }
+                ]);
+            }
+        };
+
+        fetchEntityTypes();
+    }, []);
 
     // Funzione screenshot
     const handleScreenshot = async () => {
@@ -39,17 +72,6 @@ function App() {
             link.click();
         } catch (err) {
             console.error('Errore nello screenshot:', err);
-        }
-    };
-
-    // Funzione per cancellare tutti gli elementi
-    const handleClearAll = () => {
-        if (window.confirm('Sei sicuro di voler cancellare tutti gli elementi?')) {
-            setSelectedItems([]);
-            setAllConnections([]);
-            setConnectionPositions({});
-            boxRefs.current = {};
-            itemRefs.current = {};
         }
     };
 
@@ -92,192 +114,29 @@ function App() {
     const handleRelationSelect = (sourceBoxId, connectionData) => {
         const newConnectionId = `conn-${Date.now()}`;
 
-        // Cerca se l'URI del target esiste già come entità principale
-        const existingMainItem = selectedItems.find(item => item.uri === connectionData.target.uri);
-
-        // Cerca se l'URI del target esiste già tra le connessioni (box arancioni secondari)
-        let existingConnectionBox = null;
-        let existingConnectionBoxId = null;
-
-        for (const item of selectedItems) {
-            if (item.connections) {
-                const foundConn = item.connections.find(conn => conn.target.uri === connectionData.target.uri);
-                if (foundConn) {
-                    existingConnectionBox = foundConn;
-                    existingConnectionBoxId = `connection-box-${item.id}-${foundConn.id}`;
-                    break;
-                }
-            }
-        }
-
-        // Cerca se l'URI del target esiste già tra le connessioni globali (box viola)
-        const existingGlobalBox = allConnections.find(conn => conn.target.uri === connectionData.target.uri);
-        let existingGlobalBoxId = null;
-        if (existingGlobalBox) {
-            existingGlobalBoxId = `global-connection-box-${existingGlobalBox.sourceBoxId}-${existingGlobalBox.id}`;
-        }
-
         const mainItem = selectedItems.find(item => item.id === sourceBoxId);
-
         if (mainItem) {
-            // È un box principale (arancione)
-            // Controlla se esiste già una connessione con lo stesso target URI per questo item
-            const existingConnection = mainItem.connections?.find(
-                conn => conn.target.uri === connectionData.target.uri
-            );
-
-            if (existingConnection) {
-                alert(`Una connessione a "${connectionData.target.label}" esiste già per questa entità!`);
-                setMenuOpenIndex(null);
-                setMenuOpenConnectionId(null);
-                return;
-            }
-
             const itemIndex = selectedItems.indexOf(mainItem);
-
-            // Se l'entità esiste già da qualche parte, crea una connessione diretta
-            if (existingMainItem) {
-                // Connessione verso un'entità principale esistente
-                setSelectedItems(prev =>
-                    prev.map((item, i) =>
-                        i === itemIndex
-                            ? {
-                                ...item,
-                                connections: [...(item.connections || []), {
-                                    id: newConnectionId,
-                                    relation: connectionData.relation,
-                                    target: {
-                                        label: existingMainItem.label,
-                                        uri: existingMainItem.uri
-                                    },
-                                    sourceBoxId: sourceBoxId,
-                                    targetBoxId: `entity-box-${existingMainItem.id}`,
-                                    isExistingTarget: true
-                                }]
-                            }
-                            : item
-                    )
-                );
-            } else if (existingConnectionBoxId) {
-                // Connessione verso un box arancione secondario esistente
-                setSelectedItems(prev =>
-                    prev.map((item, i) =>
-                        i === itemIndex
-                            ? {
-                                ...item,
-                                connections: [...(item.connections || []), {
-                                    id: newConnectionId,
-                                    relation: connectionData.relation,
-                                    target: {
-                                        label: existingConnectionBox.target.label,
-                                        uri: existingConnectionBox.target.uri
-                                    },
-                                    sourceBoxId: sourceBoxId,
-                                    targetBoxId: existingConnectionBoxId,
-                                    isExistingTarget: true
-                                }]
-                            }
-                            : item
-                    )
-                );
-            } else if (existingGlobalBoxId) {
-                // Connessione verso un box viola esistente
-                setSelectedItems(prev =>
-                    prev.map((item, i) =>
-                        i === itemIndex
-                            ? {
-                                ...item,
-                                connections: [...(item.connections || []), {
-                                    id: newConnectionId,
-                                    relation: connectionData.relation,
-                                    target: {
-                                        label: existingGlobalBox.target.label,
-                                        uri: existingGlobalBox.target.uri
-                                    },
-                                    sourceBoxId: sourceBoxId,
-                                    targetBoxId: existingGlobalBoxId,
-                                    isExistingTarget: true
-                                }]
-                            }
-                            : item
-                    )
-                );
-            } else {
-                // Crea un nuovo box
-                setSelectedItems(prev =>
-                    prev.map((item, i) =>
-                        i === itemIndex
-                            ? {
-                                ...item,
-                                connections: [...(item.connections || []), {
-                                    id: newConnectionId,
-                                    ...connectionData,
-                                    sourceBoxId: sourceBoxId
-                                }]
-                            }
-                            : item
-                    )
-                );
-            }
-        } else {
-            // È un box secondario (connessione o global)
-            // Controlla se esiste già una connessione globale con lo stesso target URI dalla stessa source
-            const existingGlobalConnection = allConnections.find(
-                conn => conn.sourceBoxId === sourceBoxId && conn.target.uri === connectionData.target.uri
+            setSelectedItems(prev =>
+                prev.map((item, i) =>
+                    i === itemIndex
+                        ? {
+                            ...item,
+                            connections: [...(item.connections || []), {
+                                id: newConnectionId,
+                                ...connectionData,
+                                sourceBoxId: sourceBoxId
+                            }]
+                        }
+                        : item
+                )
             );
-
-            if (existingGlobalConnection) {
-                alert(`Una connessione a "${connectionData.target.label}" esiste già da questo box!`);
-                setMenuOpenIndex(null);
-                setMenuOpenConnectionId(null);
-                return;
-            }
-
-            // Se l'entità esiste già da qualche parte, crea una connessione diretta
-            if (existingMainItem) {
-                setAllConnections(prev => [...prev, {
-                    id: newConnectionId,
-                    sourceBoxId: sourceBoxId,
-                    relation: connectionData.relation,
-                    target: {
-                        label: existingMainItem.label,
-                        uri: existingMainItem.uri
-                    },
-                    targetBoxId: `entity-box-${existingMainItem.id}`,
-                    isExistingTarget: true
-                }]);
-            } else if (existingConnectionBoxId) {
-                setAllConnections(prev => [...prev, {
-                    id: newConnectionId,
-                    sourceBoxId: sourceBoxId,
-                    relation: connectionData.relation,
-                    target: {
-                        label: existingConnectionBox.target.label,
-                        uri: existingConnectionBox.target.uri
-                    },
-                    targetBoxId: existingConnectionBoxId,
-                    isExistingTarget: true
-                }]);
-            } else if (existingGlobalBoxId) {
-                setAllConnections(prev => [...prev, {
-                    id: newConnectionId,
-                    sourceBoxId: sourceBoxId,
-                    relation: connectionData.relation,
-                    target: {
-                        label: existingGlobalBox.target.label,
-                        uri: existingGlobalBox.target.uri
-                    },
-                    targetBoxId: existingGlobalBoxId,
-                    isExistingTarget: true
-                }]);
-            } else {
-                // Crea un nuovo box
-                setAllConnections(prev => [...prev, {
-                    id: newConnectionId,
-                    sourceBoxId: sourceBoxId,
-                    ...connectionData
-                }]);
-            }
+        } else {
+            setAllConnections(prev => [...prev, {
+                id: newConnectionId,
+                sourceBoxId: sourceBoxId,
+                ...connectionData
+            }]);
         }
 
         setMenuOpenIndex(null);
@@ -308,6 +167,17 @@ function App() {
     };
 
     const handleRemove = (itemId) => {
+        // Se itemId è 'all', cancella tutto
+        if (itemId === 'all') {
+            setSelectedItems([]);
+            setConnectionPositions({});
+            setAllConnections([]);
+            boxRefs.current = {};
+            itemRefs.current = {};
+            return;
+        }
+
+        // Altrimenti cancella solo l'item specifico
         setSelectedItems(prev => prev.filter(item => item.id !== itemId));
         setConnectionPositions(prev => {
             const newPositions = { ...prev };
@@ -365,16 +235,7 @@ function App() {
     };
 
     const handleSelectResult = (newItem) => {
-        // Controlla se esiste già un'entità con lo stesso URI
-        const existingItem = selectedItems.find(item => item.uri === newItem.uri);
-
-        if (existingItem) {
-            // Mostra un alert per informare l'utente
-            alert(`L'entità "${newItem.label}" è già presente nell'area di lavoro!`);
-            return;
-        }
-
-        // Se non esiste, aggiungila
+        console.log('Adding new item with type:', newItem);
         setSelectedItems(prev => [...prev, newItem]);
     };
 
@@ -413,47 +274,27 @@ function App() {
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
                     setResults={setResults}
+                    entityTypes={entityTypes}
                 />
 
-                {/* Pulsanti in alto a destra */}
-                <div style={{
-                    position: 'absolute',
-                    top: 10,
-                    right: 10,
-                    zIndex: 1000,
-                    display: 'flex',
-                    gap: '10px'
-                }}>
-                    <button
-                        onClick={handleClearAll}
-                        style={{
-                            background: '#e74c3c',
-                            color: '#fff',
-                            border: 'none',
-                            padding: '10px 16px',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-                            fontWeight: 'bold'
-                        }}
-                    >
-                        Cancella Tutto
-                    </button>
-                    <button
-                        onClick={handleScreenshot}
-                        style={{
-                            background: '#2563eb',
-                            color: '#fff',
-                            border: 'none',
-                            padding: '10px 16px',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-                        }}
-                    >
-                        Screenshot
-                    </button>
-                </div>
+                <button
+                    onClick={handleScreenshot}
+                    style={{
+                        position: 'absolute',
+                        top: 10,
+                        right: 10,
+                        zIndex: 1000,
+                        background: '#2563eb',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '10px 16px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                    }}
+                >
+                    Screenshot
+                </button>
             </div>
         </div>
     );

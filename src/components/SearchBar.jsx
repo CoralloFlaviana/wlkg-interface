@@ -64,7 +64,7 @@ function SearchBar({ searchQuery, setSearchQuery, setResults }) {
             }
 
             if (formattedResults.length === 0) {
-                console.warn("Nessun risultato trovato. Uso dati fittizi.");
+                console.warn("Nessun risultato trovato. Uso dati fittizi."); /*TODO: DA TOGLIERE QUESTA PARTE SERVE SOLO X TEST*/
                 const fakeData = {
                     results: {
                         bindings: [
