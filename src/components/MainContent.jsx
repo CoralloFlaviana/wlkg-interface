@@ -112,7 +112,7 @@ const MainContent = forwardRef(({
                     }
 
                     return (
-                        <div key={item.id}>
+                        <div key={`entity-wrapper-${item.id}`}>
                             {/* Box entità principale */}
                             <Box
                                 boxData={{
@@ -141,44 +141,56 @@ const MainContent = forwardRef(({
                             />
 
                             {/* Render connection boxes (box arancioni dalle connessioni) */}
-                            {item.connections?.map((connection) => (
-                                <Box
-                                    key={`conn-${connection.id}`}
-                                    boxData={{
-                                        id: `${item.id}-${connection.id}`,
-                                        label: connection.target.label,
-                                        uri: connection.target.uri,
-                                        position: connection.position,
-                                        type: 'connection',
-                                        parentId: item.id,
-                                        connectionId: connection.id,
-                                        isDraggable: true
-                                    }}
-                                    onPositionChange={(boxId, newPos) => {
-                                        handleTargetMove(item.id, connection.id, newPos);
-                                    }}
-                                    onTargetMove={handleTargetMove}
-                                    onRemove={() => handleDeleteConnection(item.id, connection.id)}
-                                    onOpenRelations={() => handleOpenRelations(`connection-box-${item.id}-${connection.id}`)}
-                                    menuOpen={menuOpenForBox[`${item.id}-${connection.id}`] || false}
-                                    setMenuOpen={(isOpen) => toggleMenuForBox(`${item.id}-${connection.id}`, isOpen)}
-                                    relations={relations}
-                                    onRelationSelect={handleRelationSelect}
-                                    onDeleteConnection={handleDeleteConnection}
-                                    boxRefs={boxRefs}
-                                    color="#f39c12"
-                                />
-                            ))}
+                            {item.connections?.map((connection) => {
+                                // Non renderizzare il box se punta a un'entità esistente
+                                if (connection.isExistingTarget) {
+                                    return null;
+                                }
+
+                                return (
+                                    <Box
+                                        key={`connection-wrapper-${item.id}-${connection.id}`}
+                                        boxData={{
+                                            id: `${item.id}-${connection.id}`,
+                                            label: connection.target.label,
+                                            uri: connection.target.uri,
+                                            position: connection.position,
+                                            type: 'connection',
+                                            parentId: item.id,
+                                            connectionId: connection.id,
+                                            isDraggable: true
+                                        }}
+                                        onPositionChange={(boxId, newPos) => {
+                                            handleTargetMove(item.id, connection.id, newPos);
+                                        }}
+                                        onTargetMove={handleTargetMove}
+                                        onRemove={() => handleDeleteConnection(item.id, connection.id)}
+                                        onOpenRelations={() => handleOpenRelations(`connection-box-${item.id}-${connection.id}`)}
+                                        menuOpen={menuOpenForBox[`${item.id}-${connection.id}`] || false}
+                                        setMenuOpen={(isOpen) => toggleMenuForBox(`${item.id}-${connection.id}`, isOpen)}
+                                        relations={relations}
+                                        onRelationSelect={handleRelationSelect}
+                                        onDeleteConnection={handleDeleteConnection}
+                                        boxRefs={boxRefs}
+                                        color="#f39c12"
+                                    />
+                                );
+                            })}
                         </div>
                     );
                 })}
 
                 {/* Render global connections (box viola) */}
                 {allConnections.map(connection => {
+                    // Non renderizzare il box se punta a un'entità esistente
+                    if (connection.isExistingTarget) {
+                        return null;
+                    }
+
                     const targetBoxId = `global-connection-box-${connection.sourceBoxId}-${connection.id}`;
                     return (
                         <Box
-                            key={targetBoxId}
+                            key={`global-wrapper-${connection.sourceBoxId}-${connection.id}`}
                             boxData={{
                                 id: targetBoxId,
                                 label: connection.target.label,
