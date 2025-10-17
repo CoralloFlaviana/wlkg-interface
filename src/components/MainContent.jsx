@@ -24,7 +24,8 @@ const MainContent = forwardRef(({
                                     searchQuery,
                                     setSearchQuery,
                                     setResults,
-                                    entityTypes
+                                    entityTypes,
+                                    getColorForType
                                 }, ref) => {
     const [menuOpenForBox, setMenuOpenForBox] = useState({});
     const [zoom, setZoom] = useState(1);
@@ -99,16 +100,22 @@ const MainContent = forwardRef(({
                     boxRefs={boxRefs}
                 />
 
-                {/* Render main items (box arancioni) */}
+                {/* Render main items */}
                 {selectedItems.map((item, index) => {
+                    // Usa la funzione getColorForType se disponibile, altrimenti fallback
+                    const itemColor = getColorForType ? getColorForType(item.entityType) : '#95a5a6';
+
+                    const entityBoxId = `entity-box-${item.id}`;
+
                     if (boxRefs.current) {
-                        boxRefs.current[`entity-box-${item.id}`] = {
+                        boxRefs.current[entityBoxId] = {
                             position: {
                                 x: (item.position?.x || 100),
                                 y: (item.position?.y || 100)
                             },
                             uri: item.uri,
-                            label: item.label
+                            label: item.label,
+                            entityType: item.entityType
                         };
                     }
 
@@ -122,6 +129,7 @@ const MainContent = forwardRef(({
                                     uri: item.uri,
                                     position: item.position,
                                     type: 'entity',
+                                    entityType: item.entityType,
                                     connections: item.connections,
                                     isDraggable: true
                                 }}
@@ -138,45 +146,62 @@ const MainContent = forwardRef(({
                                 onRelationSelect={handleRelationSelect}
                                 onDeleteConnection={handleDeleteConnection}
                                 boxRefs={boxRefs}
-                                color="#f39c12"
+                                color={itemColor}
                             />
 
-                            {/* Render connection boxes (box arancioni dalle connessioni) */}
-                            {item.connections?.map((connection) => (
-                                <Box
-                                    key={`conn-${connection.id}`}
-                                    boxData={{
-                                        id: `${item.id}-${connection.id}`,
-                                        label: connection.target.label,
-                                        uri: connection.target.uri,
-                                        position: connection.position,
-                                        type: 'connection',
-                                        parentId: item.id,
-                                        connectionId: connection.id,
-                                        isDraggable: true
-                                    }}
-                                    onPositionChange={(boxId, newPos) => {
-                                        handleTargetMove(item.id, connection.id, newPos);
-                                    }}
-                                    onTargetMove={handleTargetMove}
-                                    onRemove={() => handleDeleteConnection(item.id, connection.id)}
-                                    onOpenRelations={() => handleOpenRelations(`connection-box-${item.id}-${connection.id}`)}
-                                    menuOpen={menuOpenForBox[`${item.id}-${connection.id}`] || false}
-                                    setMenuOpen={(isOpen) => toggleMenuForBox(`${item.id}-${connection.id}`, isOpen)}
-                                    relations={relations}
-                                    onRelationSelect={handleRelationSelect}
-                                    onDeleteConnection={handleDeleteConnection}
-                                    boxRefs={boxRefs}
-                                    color="#f39c12"
-                                />
-                            ))}
+                            {/* Render connection boxes - solo se NON puntano a box esistenti */}
+                            {item.connections?.map((connection) => {
+                                // Se la connessione punta a un box esistente, non creare un nuovo box
+                                if (connection.isExistingTarget) {
+                                    return null;
+                                }
+
+                                const connColor = getColorForType ? getColorForType(connection.target?.entityType) : '#95a5a6';
+
+                                return (
+                                    <Box
+                                        key={`conn-${connection.id}`}
+                                        boxData={{
+                                            id: `${item.id}-${connection.id}`,
+                                            label: connection.target.label,
+                                            uri: connection.target.uri,
+                                            position: connection.position,
+                                            type: 'connection',
+                                            entityType: connection.target?.entityType,
+                                            parentId: item.id,
+                                            connectionId: connection.id,
+                                            isDraggable: true
+                                        }}
+                                        onPositionChange={(boxId, newPos) => {
+                                            handleTargetMove(item.id, connection.id, newPos);
+                                        }}
+                                        onTargetMove={handleTargetMove}
+                                        onRemove={() => handleDeleteConnection(item.id, connection.id)}
+                                        onOpenRelations={() => handleOpenRelations(`connection-box-${item.id}-${connection.id}`)}
+                                        menuOpen={menuOpenForBox[`${item.id}-${connection.id}`] || false}
+                                        setMenuOpen={(isOpen) => toggleMenuForBox(`${item.id}-${connection.id}`, isOpen)}
+                                        relations={relations}
+                                        onRelationSelect={handleRelationSelect}
+                                        onDeleteConnection={handleDeleteConnection}
+                                        boxRefs={boxRefs}
+                                        color={connColor}
+                                    />
+                                );
+                            })}
                         </div>
                     );
                 })}
 
-                {/* Render global connections (box viola) */}
+                {/* Render global connections - solo se NON puntano a box esistenti */}
                 {allConnections.map(connection => {
+                    // Se la connessione punta a un box esistente, non creare un nuovo box
+                    if (connection.isExistingTarget) {
+                        return null;
+                    }
+
                     const targetBoxId = `global-connection-box-${connection.sourceBoxId}-${connection.id}`;
+                    const connColor = getColorForType ? getColorForType(connection.target?.entityType) : '#95a5a6';
+
                     return (
                         <Box
                             key={targetBoxId}
@@ -186,6 +211,7 @@ const MainContent = forwardRef(({
                                 uri: connection.target.uri,
                                 position: connectionPositions?.[`${connection.sourceBoxId}-${connection.id}`],
                                 type: 'global-connection',
+                                entityType: connection.target?.entityType,
                                 parentId: connection.sourceBoxId,
                                 connectionId: connection.id,
                                 isDraggable: true
@@ -205,7 +231,7 @@ const MainContent = forwardRef(({
                             onRelationSelect={handleRelationSelect}
                             onDeleteConnection={handleDeleteConnection}
                             boxRefs={boxRefs}
-                            color="#9b59b6"
+                            color={connColor}
                         />
                     );
                 })}
@@ -235,7 +261,7 @@ const MainContent = forwardRef(({
                 />
             </div>
 
-            {/* Zoom controls e Clear All */}
+            {/* Clear All */}
             <div style={{
                 position: 'fixed',
                 bottom: '20px',
@@ -270,48 +296,6 @@ const MainContent = forwardRef(({
                     Cancella Tutto
                 </button>
 
-                {/* Zoom Controls */}
-                <div style={{
-                    display: 'flex',
-                    gap: '10px',
-                    alignItems: 'center',
-                    backgroundColor: 'white',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }}>
-                    <button
-                        onClick={handleZoomOut}
-                        style={{
-                            padding: '6px 10px',
-                            backgroundColor: '#3498db',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '16px'
-                        }}
-                    >
-                        −
-                    </button>
-                    <span style={{ fontSize: '14px', fontWeight: 'bold' }}>
-                        {Math.round(zoom * 100)}%
-                    </span>
-                    <button
-                        onClick={handleZoomIn}
-                        style={{
-                            padding: '6px 10px',
-                            backgroundColor: '#3498db',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '16px'
-                        }}
-                    >
-                        ＋
-                    </button>
-                </div>
             </div>
         </div>
     );

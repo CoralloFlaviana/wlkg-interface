@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import './SearchBar.css';
 
-function SearchBar({ searchQuery, setSearchQuery, setResults }) {
+function SearchBar({ searchQuery, setSearchQuery, setResults, entityTypes }) {
     const [isLoading, setIsLoading] = useState(false);
     const [searchType, setSearchType] = useState('person');
 
-    const searchTypeOptions = [
-        { value: 'person', label: 'Persona' },
-        { value: 'work', label: 'Opera' },
-        { value: 'subject', label: 'Soggetto' }
-    ];
+    // Usa entityTypes passato come prop invece di un array hardcoded nel caso contrario uso dati di test todo togliere
+    const searchTypeOptions = entityTypes && entityTypes.length > 0
+        ? entityTypes
+        : [
+            { value: 'person', label: 'Persona' },
+            { value: 'work', label: 'Opera' },
+            { value: 'subject', label: 'Soggetto' }
+        ];
 
     const fetchData = async () => {
         try {
@@ -19,12 +22,19 @@ function SearchBar({ searchQuery, setSearchQuery, setResults }) {
                     "entities": { "work": [], "person": [], "subject": [], "publisher": [] }
                 }),
                 text: searchQuery,
-                type: "person",
+                type: searchType,
                 k: 1,
             });
 
+
             const response = await fetch(`/search_regex?label=${searchQuery}`);
-            console.log('/search_regex?label=${}', searchQuery);
+            console.log('/search_regex?label=', searchQuery);
+            /*if (entityTypes !== "altro") {
+                const response = await fetch(`/search_regex?label=${searchQuery}&numberEntity${entityTypes}`);
+            } else {
+                console.log("EntityType è 'altro', quindi non eseguo la fetch.");
+            }*/
+
 
             if (!response.ok) {
                 throw new Error(`Errore API: ${response.statusText}`);
@@ -110,7 +120,7 @@ function SearchBar({ searchQuery, setSearchQuery, setResults }) {
                     padding: '10px',
                     borderRadius: '4px',
                     border: '1px solid #ccc',
-                    backgroundColor: 'white',
+                    backgroundColor: 'darkgrey',
                     cursor: 'pointer',
                     fontSize: '14px'
                 }}

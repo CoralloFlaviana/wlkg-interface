@@ -19,8 +19,15 @@ function App() {
     const [allConnections, setAllConnections] = useState([]);
     const [entityTypes, setEntityTypes] = useState([]);
 
-    // Ref per MainContent
     const mainContentRef = useRef(null);
+
+    // Funzione per ottenere il colore in base al tipo
+    const getColorForType = (entityType) => {
+        if (!entityType) return '#3e8aad'; // colore di default
+        console.log("ENTITà BOX",entityType);
+        const typeConfig = entityTypes.find(t => t.value === entityType);
+        return typeConfig?.color || '#95a5a6'; // grigio di default
+    };
 
     // Carica le entità disponibili all'avvio
     React.useEffect(() => {
@@ -31,7 +38,6 @@ function App() {
 
                 const data = await response.json();
 
-                // Trasforma l'oggetto entities in un array per il menu a tendina
                 const types = Object.entries(data.entities).map(([key, entity]) => ({
                     value: key,
                     label: entity.label,
@@ -42,7 +48,6 @@ function App() {
                 setEntityTypes(types);
             } catch (error) {
                 console.error("Errore caricando i tipi di entità:", error);
-                // Fallback ai valori di default
                 setEntityTypes([
                     { value: 'person', label: 'Persona', color: '#f39c12' },
                     { value: 'work', label: 'Libro', color: '#3498db' },
@@ -54,7 +59,6 @@ function App() {
         fetchEntityTypes();
     }, []);
 
-    // Funzione screenshot
     const handleScreenshot = async () => {
         if (!mainContentRef.current) return;
 
@@ -114,6 +118,14 @@ function App() {
     const handleRelationSelect = (sourceBoxId, connectionData) => {
         const newConnectionId = `conn-${Date.now()}`;
 
+        // Determina il tipo dell'entità target dalla risposta API
+        let targetEntityType = connectionData.target?.entityType || 'unknown';
+
+        // Se il target esiste già, assicurati che sia marcato come esistente
+        if (connectionData.isExistingTarget && connectionData.targetBoxId) {
+            console.log('Creating connection to existing box:', connectionData.targetBoxId);
+        }
+
         const mainItem = selectedItems.find(item => item.id === sourceBoxId);
         if (mainItem) {
             const itemIndex = selectedItems.indexOf(mainItem);
@@ -125,17 +137,26 @@ function App() {
                             connections: [...(item.connections || []), {
                                 id: newConnectionId,
                                 ...connectionData,
-                                sourceBoxId: sourceBoxId
+                                sourceBoxId: sourceBoxId,
+                                target: {
+                                    ...connectionData.target,
+                                    entityType: targetEntityType
+                                }
                             }]
                         }
                         : item
                 )
             );
         } else {
+            // È una global connection (da un box di connessione)
             setAllConnections(prev => [...prev, {
                 id: newConnectionId,
                 sourceBoxId: sourceBoxId,
-                ...connectionData
+                ...connectionData,
+                target: {
+                    ...connectionData.target,
+                    entityType: targetEntityType
+                }
             }]);
         }
 
@@ -167,7 +188,6 @@ function App() {
     };
 
     const handleRemove = (itemId) => {
-        // Se itemId è 'all', cancella tutto
         if (itemId === 'all') {
             setSelectedItems([]);
             setConnectionPositions({});
@@ -177,7 +197,6 @@ function App() {
             return;
         }
 
-        // Altrimenti cancella solo l'item specifico
         setSelectedItems(prev => prev.filter(item => item.id !== itemId));
         setConnectionPositions(prev => {
             const newPositions = { ...prev };
@@ -250,6 +269,7 @@ function App() {
             <SearchResults
                 results={results}
                 onSelectResult={handleSelectResult}
+                selectedItems={selectedItems}
             />
 
             <div style={{ position: 'relative', flex: 1 }}>
@@ -275,6 +295,7 @@ function App() {
                     setSearchQuery={setSearchQuery}
                     setResults={setResults}
                     entityTypes={entityTypes}
+                    getColorForType={getColorForType}
                 />
 
                 <button

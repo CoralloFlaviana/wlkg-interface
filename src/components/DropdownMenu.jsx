@@ -2,14 +2,33 @@ import React, { useState } from 'react';
 
 const API_BASE = '/api/query/';
 
-const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDOMId }) => {
-    // sourceBoxId dovrebbe essere l'URI dell'entità
-    // sourceBoxDOMId dovrebbe essere l'ID HTML della box nel DOM
+const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDOMId, boxRefs }) => {
     const [selectedFirstLevel, setSelectedFirstLevel] = useState(null);
     const [secondLevelOptions, setSecondLevelOptions] = useState([]);
     const [showSecondLevel, setShowSecondLevel] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    // Funzione per trovare se un'entità esiste già in una box
+    const findExistingBox = (uri) => {
+        if (!boxRefs?.current) {
+            console.log('boxRefs not available');
+            return null;
+        }
+
+        console.log('Searching for URI:', uri);
+        console.log('Available boxes:', Object.keys(boxRefs.current));
+
+        for (const [boxId, boxData] of Object.entries(boxRefs.current)) {
+            console.log(`Checking box ${boxId}: ${boxData.uri} === ${uri}?`, boxData.uri === uri);
+            if (boxData.uri === uri) {
+                console.log('Found existing box:', boxId);
+                return boxId;
+            }
+        }
+        console.log('No existing box found for URI:', uri);
+        return null;
+    };
 
     const handleFirstLevelSelect = async (option) => {
         console.log("Selecting first level option:", option);
@@ -34,10 +53,32 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
             console.log("API response:", data);
 
             const secondLevelOptions = Array.isArray(data.results)
-                ? data.results.map(r => ({
-                    label: r.sogg?.value || r.sogg || r.s?.value || r.s || 'Sconosciuto',
-                    uri: r.s?.value || r.s || ''
-                }))
+                ? data.results.map(r => {
+                    // Prova a determinare il tipo dall'URI o dai metadati
+                    let entityType = 'unknown';
+                    const uri = r.s?.value || r.s || '';
+
+                    if (r.type?.value) {
+                        entityType = r.type.value;
+                    } else if (r.entityType) {
+                        entityType = r.entityType;
+                    } else {
+                        // Fallback: prova a dedurre dal path dell'URI
+                        if (uri.includes('person') || uri.includes('Person')) {
+                            entityType = 'person';
+                        } else if (uri.includes('work') || uri.includes('Work')) {
+                            entityType = 'work';
+                        } else if (uri.includes('subject') || uri.includes('Subject')) {
+                            entityType = 'subject';
+                        }
+                    }
+
+                    return {
+                        label: r.sogg?.value || r.sogg || r.s?.value || r.s || 'Sconosciuto',
+                        uri: uri,
+                        entityType: entityType
+                    };
+                })
                 : [];
 
             console.log("Processed second level options:", secondLevelOptions);
@@ -56,13 +97,35 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
         console.log("Selecting second level option:", option);
         console.log("Passing sourceBoxId:", sourceBoxDOMId);
 
-        onSelect({
-            relation: selectedFirstLevel,
-            target: {
-                label: option.label,
-                uri: option.uri
-            }
-        });
+        // Controlla se l'entità esiste già in una box
+        const existingBoxId = findExistingBox(option.uri);
+
+        if (existingBoxId) {
+            console.log("Entity already exists in box:", existingBoxId);
+            // Se esiste già, crea un collegamento verso la box esistente
+            onSelect({
+                relation: selectedFirstLevel,
+                target: {
+                    label: option.label,
+                    uri: option.uri,
+                    entityType: option.entityType
+                },
+                isExistingTarget: true,
+                targetBoxId: existingBoxId
+            });
+        } else {
+            // Se non esiste, crea una nuova box
+            onSelect({
+                relation: selectedFirstLevel,
+                target: {
+                    label: option.label,
+                    uri: option.uri,
+                    entityType: option.entityType
+                },
+                isExistingTarget: false
+            });
+        }
+
         closeMenu();
     };
 
@@ -104,9 +167,14 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
             {!showSecondLevel ? (
                 <div>
                     <div style={stileIntestazione}>Seleziona relazione:</div>
-                    {relations.map(option => (
+                    {relations.length === 0 && (
+                        <div style={{ padding: '10px 12px', textAlign: 'center', color: '#666', fontSize: '12px' }}>
+                            Nessuna relazione disponibile
+                        </div>
+                    )}
+                    {relations.map((option, idx) => (
                         <div
-                            key={option.id || option.uri}
+                            key={option.id || option.uri || idx}
                             style={stileOpzione}
                             onClick={(e) => { e.stopPropagation(); handleFirstLevelSelect(option); }}
                             onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f0f0'}
@@ -149,17 +217,54 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
                         </div>
                     )}
 
-                    {!loading && secondLevelOptions.map(option => (
-                        <div
-                            key={option.id || option.uri}
-                            style={stileOpzione}
-                            onClick={(e) => { e.stopPropagation(); handleSecondLevelSelect(option); }}
-                            onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-                            onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
-                        >
-                            {option.label}
-                        </div>
-                    ))}
+                    {!loading && secondLevelOptions.map((option, idx) => {
+                        const existingBoxId = findExistingBox(option.uri);
+                        const isExisting = !!existingBoxId;
+
+                        return (
+                            <div
+                                key={option.id || option.uri || idx}
+                                style={{
+                                    ...stileOpzione,
+                                    backgroundColor: isExisting ? '#e8f5e9' : 'white',
+                                    borderLeft: isExisting ? '3px solid #4caf50' : 'none'
+                                }}
+                                onClick={(e) => { e.stopPropagation(); handleSecondLevelSelect(option); }}
+                                onMouseEnter={(e) => e.target.style.backgroundColor = isExisting ? '#c8e6c9' : '#f0f0f0'}
+                                onMouseLeave={(e) => e.target.style.backgroundColor = isExisting ? '#e8f5e9' : 'white'}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    {isExisting && (
+                                        <span style={{ color: '#4caf50', fontSize: '12px' }}>✓</span>
+                                    )}
+                                    <span>{option.label}</span>
+                                </div>
+                                {option.entityType && option.entityType !== 'unknown' && (
+                                    <div style={{
+                                        fontSize: '10px',
+                                        color: '#666',
+                                        marginTop: '2px',
+                                        backgroundColor: isExisting ? '#fff' : '#f0f0f0',
+                                        padding: '2px 4px',
+                                        borderRadius: '3px',
+                                        display: 'inline-block'
+                                    }}>
+                                        {option.entityType}
+                                    </div>
+                                )}
+                                {isExisting && (
+                                    <div style={{
+                                        fontSize: '9px',
+                                        color: '#4caf50',
+                                        marginTop: '2px',
+                                        fontStyle: 'italic'
+                                    }}>
+                                        Già presente nella lavagna
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             )}
         </div>

@@ -14,7 +14,7 @@ const Box = ({
                  onDeleteConnection,
                  boxRefs,
                  onTargetMove,
-                 color = '#f39c12'
+                 color = '#95a5a6' // grigio di default
              }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -42,10 +42,10 @@ const Box = ({
                 position: targetPosition,
                 uri: boxData.uri,
                 label: boxData.label,
-                type: boxData.entityType || boxData.type || 'unknown'
+                entityType: boxData.entityType || 'unknown'
             };
         }
-    }, [targetPosition, boxData.uri, boxData.label, boxData.entityType, boxData.type, boxId, boxRefs]);
+    }, [targetPosition, boxData.uri, boxData.label, boxData.entityType, boxId, boxRefs]);
 
     const handleMouseDown = (e) => {
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
@@ -100,18 +100,8 @@ const Box = ({
 
     const isDraggable = boxData.isDraggable !== false;
 
-    // Determina il colore in base al tipo
-    let boxColor = color;
-    if (boxData.type === 'connection') {
-        // Per le connessioni, usa un colore leggermente più scuro del colore base
-        boxColor = adjustColor(color, -20);
-    }
-    if (boxData.type === 'global-connection') {
-        boxColor = '#9b59b6';
-    }
-
-    // Funzione helper per scurire/schiarire un colore
-    function adjustColor(color, amount) {
+    // Funzione helper per scurire un colore quando si trascina
+    function darkenColor(color, amount = -20) {
         const clamp = (val) => Math.min(Math.max(val, 0), 255);
         const num = parseInt(color.replace('#', ''), 16);
         const r = clamp((num >> 16) + amount);
@@ -121,6 +111,7 @@ const Box = ({
     }
 
     const displayPosition = targetPosition || { x: 100, y: 100 };
+    const boxColor = isDragging ? darkenColor(color) : color;
 
     return (
         <div
@@ -137,7 +128,7 @@ const Box = ({
                 top: displayPosition.y,
                 width: '150px',
                 height: '80px',
-                backgroundColor: isDragging ? adjustColor(boxColor, -20) : boxColor,
+                backgroundColor: boxColor,
                 borderRadius: '12px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -197,7 +188,7 @@ const Box = ({
             </div>
 
             {/* Type badge */}
-            {boxData.entityType && boxData.type === 'entity' && (
+            {boxData.entityType && (
                 <div style={{
                     position: 'absolute',
                     bottom: '4px',
@@ -270,6 +261,7 @@ const Box = ({
                             onRelationSelect(boxId, connectionData);
                         }}
                         closeMenu={() => setMenuOpen(false)}
+                        boxRefs={boxRefs}
                     />
                 )}
             </div>
