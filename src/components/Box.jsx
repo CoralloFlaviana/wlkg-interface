@@ -7,6 +7,7 @@ const Box = ({
                  onPositionChange,
                  onRemove,
                  onOpenRelations,
+                 onOpenInfo,
                  menuOpen,
                  setMenuOpen,
                  relations,
@@ -14,14 +15,13 @@ const Box = ({
                  onDeleteConnection,
                  boxRefs,
                  onTargetMove,
-                 color = '#95a5a6' // grigio di default
+                 color = '#95a5a6'
              }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [targetPosition, setTargetPosition] = useState(boxData.position || { x: Math.random() * 600 + 300, y: Math.random() * 300 + 200 });
     const internalRef = useRef(null);
 
-    // Determina l'ID del box basato sul tipo
     const getBoxId = () => {
         if (boxData.type === 'entity') {
             return `entity-box-${boxData.id}`;
@@ -35,7 +35,6 @@ const Box = ({
 
     const boxId = getBoxId();
 
-    // Aggiorna il ref dict quando la posizione cambia
     useEffect(() => {
         if (boxRefs.current) {
             boxRefs.current[boxId] = {
@@ -72,14 +71,12 @@ const Box = ({
             let newX = e.clientX - containerRect.left - dragOffset.x;
             let newY = e.clientY - containerRect.top - dragOffset.y;
 
-            // Bounds checking
             newX = Math.max(0, Math.min(newX, containerRect.width - 150));
             newY = Math.max(0, Math.min(newY, containerRect.height - 80));
 
             setTargetPosition({ x: newX, y: newY });
             onPositionChange(boxData.id, { x: newX, y: newY });
 
-            // Aggiorna anche onTargetMove se presente (per connessioni)
             if (onTargetMove && boxData.parentId && boxData.connectionId) {
                 onTargetMove(boxData.parentId, boxData.connectionId, { x: newX, y: newY });
             }
@@ -100,7 +97,6 @@ const Box = ({
 
     const isDraggable = boxData.isDraggable !== false;
 
-    // Funzione helper per scurire un colore quando si trascina
     function darkenColor(color, amount = -20) {
         const clamp = (val) => Math.min(Math.max(val, 0), 255);
         const num = parseInt(color.replace('#', ''), 16);
@@ -216,7 +212,11 @@ const Box = ({
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        alert(`INFO di: ${boxData.label}`);
+                        if (onOpenInfo) {
+                            onOpenInfo(boxId);
+                        } else {
+                            alert(`INFO di: ${boxData.label}`);
+                        }
                     }}
                     style={{
                         padding: '4px 8px',

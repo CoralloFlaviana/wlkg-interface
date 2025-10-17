@@ -3,6 +3,7 @@ import html2canvas from 'html2canvas';
 import SearchResults from './components/SearchResults.jsx';
 import MainContent from './components/MainContent.jsx';
 import GlobalConnection from './components/GlobalConnection.jsx';
+import InfoPanel from './components/InfoPanel.jsx';
 
 const API_BASE = '/api/query/';
 
@@ -19,14 +20,18 @@ function App() {
     const [allConnections, setAllConnections] = useState([]);
     const [entityTypes, setEntityTypes] = useState([]);
 
+    // Stati per il pannello info
+    const [infoPanelOpen, setInfoPanelOpen] = useState(false);
+    const [selectedEntityForInfo, setSelectedEntityForInfo] = useState(null);
+
     const mainContentRef = useRef(null);
 
     // Funzione per ottenere il colore in base al tipo
     const getColorForType = (entityType) => {
-        if (!entityType) return '#3e8aad'; // colore di default
-        console.log("ENTITà BOX",entityType);
+        if (!entityType) return '#3e8aad';
+        console.log("ENTITà BOX", entityType);
         const typeConfig = entityTypes.find(t => t.value === entityType);
-        return typeConfig?.color || '#95a5a6'; // grigio di default
+        return typeConfig?.color || '#95a5a6';
     };
 
     // Carica le entità disponibili all'avvio
@@ -79,6 +84,31 @@ function App() {
         }
     };
 
+    // Funzione per aprire il pannello info
+    const handleOpenInfo = (boxId) => {
+        // Cerca l'entità nei selectedItems
+        const mainItem = selectedItems.find(item => item.id === boxId);
+
+        if (mainItem) {
+            setSelectedEntityForInfo(mainItem);
+            setInfoPanelOpen(true);
+            return;
+        }
+
+        // Altrimenti cerca nei boxRefs (per box di connessione)
+        if (boxRefs.current[boxId]) {
+            const boxData = boxRefs.current[boxId];
+            setSelectedEntityForInfo({
+                id: boxId,
+                label: boxData.label,
+                uri: boxData.uri,
+                entityType: boxData.entityType,
+                connections: []
+            });
+            setInfoPanelOpen(true);
+        }
+    };
+
     const handleOpenRelations = async (boxId) => {
         let uri;
 
@@ -118,10 +148,8 @@ function App() {
     const handleRelationSelect = (sourceBoxId, connectionData) => {
         const newConnectionId = `conn-${Date.now()}`;
 
-        // Determina il tipo dell'entità target dalla risposta API
         let targetEntityType = connectionData.target?.entityType || 'unknown';
 
-        // Se il target esiste già, assicurati che sia marcato come esistente
         if (connectionData.isExistingTarget && connectionData.targetBoxId) {
             console.log('Creating connection to existing box:', connectionData.targetBoxId);
         }
@@ -148,7 +176,6 @@ function App() {
                 )
             );
         } else {
-            // È una global connection (da un box di connessione)
             setAllConnections(prev => [...prev, {
                 id: newConnectionId,
                 sourceBoxId: sourceBoxId,
@@ -281,6 +308,7 @@ function App() {
                     onPositionChange={handlePositionChange}
                     handleRemove={handleRemove}
                     handleOpenRelations={handleOpenRelations}
+                    handleOpenInfo={handleOpenInfo}
                     menuOpenIndex={menuOpenIndex}
                     relations={relations}
                     handleRelationSelect={handleRelationSelect}
@@ -317,6 +345,13 @@ function App() {
                     Screenshot
                 </button>
             </div>
+
+            {/* Info Panel */}
+            <InfoPanel
+                isOpen={infoPanelOpen}
+                onClose={() => setInfoPanelOpen(false)}
+                entityData={selectedEntityForInfo}
+            />
         </div>
     );
 }
