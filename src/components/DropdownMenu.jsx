@@ -1,13 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const API_BASE = '/api/query/';
 
 const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDOMId, boxRefs }) => {
+    const menuRef = useRef(null);
     const [selectedFirstLevel, setSelectedFirstLevel] = useState(null);
     const [secondLevelOptions, setSecondLevelOptions] = useState([]);
     const [showSecondLevel, setShowSecondLevel] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    // Chiudi il menu quando si clicca fuori
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                closeMenu();
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [closeMenu]);
 
     // Funzione per trovare se un'entità esiste già in una box
     const findExistingBox = (uri) => {
@@ -54,7 +69,6 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
 
             const secondLevelOptions = Array.isArray(data.results)
                 ? data.results.map(r => {
-                    // Prova a determinare il tipo dall'URI o dai metadati
                     let entityType = 'unknown';
                     const uri = r.s?.value || r.s || '';
 
@@ -63,7 +77,6 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
                     } else if (r.entityType) {
                         entityType = r.entityType;
                     } else {
-                        // Fallback: prova a dedurre dal path dell'URI
                         if (uri.includes('person') || uri.includes('Person')) {
                             entityType = 'person';
                         } else if (uri.includes('work') || uri.includes('Work')) {
@@ -97,12 +110,10 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
         console.log("Selecting second level option:", option);
         console.log("Passing sourceBoxId:", sourceBoxDOMId);
 
-        // Controlla se l'entità esiste già in una box
         const existingBoxId = findExistingBox(option.uri);
 
         if (existingBoxId) {
             console.log("Entity already exists in box:", existingBoxId);
-            // Se esiste già, crea un collegamento verso la box esistente
             onSelect({
                 relation: selectedFirstLevel,
                 target: {
@@ -114,7 +125,6 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
                 targetBoxId: existingBoxId
             });
         } else {
-            // Se non esiste, crea una nuova box
             onSelect({
                 relation: selectedFirstLevel,
                 target: {
@@ -163,7 +173,7 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
     };
 
     return (
-        <div style={stileMenu}>
+        <div ref={menuRef} style={stileMenu}>
             {!showSecondLevel ? (
                 <div>
                     <div style={stileIntestazione}>Seleziona relazione:</div>

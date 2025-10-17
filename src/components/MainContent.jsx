@@ -10,6 +10,7 @@ const MainContent = forwardRef(({
                                     onPositionChange,
                                     handleRemove,
                                     handleOpenRelations,
+                                    handleOpenInfo,
                                     menuOpenIndex,
                                     relations,
                                     handleRelationSelect,
@@ -28,28 +29,12 @@ const MainContent = forwardRef(({
                                     getColorForType
                                 }, ref) => {
     const [menuOpenForBox, setMenuOpenForBox] = useState({});
-    const [zoom, setZoom] = useState(1);
 
     const toggleMenuForBox = (boxId, isOpen) => {
         setMenuOpenForBox(prev => ({
             ...prev,
             [boxId]: isOpen
         }));
-    };
-
-    const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2));
-    const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
-
-    const handleWheel = (e) => {
-        if (e.ctrlKey) {
-            e.preventDefault();
-            setZoom(prev => {
-                const newZoom = e.deltaY < 0
-                    ? Math.min(prev + 0.1, 2)
-                    : Math.max(prev - 0.1, 0.5);
-                return newZoom;
-            });
-        }
     };
 
     return (
@@ -92,7 +77,7 @@ const MainContent = forwardRef(({
                     overflow: 'auto',
                 }}
             >
-                {/* Connection Manager - disegna le frecce */}
+                {/* Connection Manager */}
                 <ConnectionManager
                     selectedItems={selectedItems}
                     allConnections={allConnections}
@@ -102,9 +87,7 @@ const MainContent = forwardRef(({
 
                 {/* Render main items */}
                 {selectedItems.map((item, index) => {
-                    // Usa la funzione getColorForType se disponibile, altrimenti fallback
                     const itemColor = getColorForType ? getColorForType(item.entityType) : '#95a5a6';
-
                     const entityBoxId = `entity-box-${item.id}`;
 
                     if (boxRefs.current) {
@@ -137,6 +120,7 @@ const MainContent = forwardRef(({
                                 onPositionChange={onPositionChange}
                                 onRemove={handleRemove}
                                 onOpenRelations={handleOpenRelations}
+                                onOpenInfo={handleOpenInfo}
                                 menuOpen={menuOpenIndex === index}
                                 setMenuOpen={(isOpen) => {
                                     if (isOpen) setMenuOpenIndex(index);
@@ -149,9 +133,8 @@ const MainContent = forwardRef(({
                                 color={itemColor}
                             />
 
-                            {/* Render connection boxes - solo se NON puntano a box esistenti */}
+                            {/* Render connection boxes */}
                             {item.connections?.map((connection) => {
-                                // Se la connessione punta a un box esistente, non creare un nuovo box
                                 if (connection.isExistingTarget) {
                                     return null;
                                 }
@@ -178,6 +161,7 @@ const MainContent = forwardRef(({
                                         onTargetMove={handleTargetMove}
                                         onRemove={() => handleDeleteConnection(item.id, connection.id)}
                                         onOpenRelations={() => handleOpenRelations(`connection-box-${item.id}-${connection.id}`)}
+                                        onOpenInfo={handleOpenInfo}
                                         menuOpen={menuOpenForBox[`${item.id}-${connection.id}`] || false}
                                         setMenuOpen={(isOpen) => toggleMenuForBox(`${item.id}-${connection.id}`, isOpen)}
                                         relations={relations}
@@ -192,9 +176,8 @@ const MainContent = forwardRef(({
                     );
                 })}
 
-                {/* Render global connections - solo se NON puntano a box esistenti */}
+                {/* Render global connections */}
                 {allConnections.map(connection => {
-                    // Se la connessione punta a un box esistente, non creare un nuovo box
                     if (connection.isExistingTarget) {
                         return null;
                     }
@@ -222,6 +205,7 @@ const MainContent = forwardRef(({
                             onTargetMove={handleTargetMove}
                             onRemove={() => handleDeleteConnection(connection.sourceBoxId, connection.id)}
                             onOpenRelations={() => handleOpenRelations(targetBoxId)}
+                            onOpenInfo={handleOpenInfo}
                             menuOpen={menuOpenConnectionId === targetBoxId}
                             setMenuOpen={(isOpen) => {
                                 if (isOpen) setMenuOpenConnectionId(targetBoxId);
@@ -271,7 +255,6 @@ const MainContent = forwardRef(({
                 alignItems: 'center',
                 zIndex: 25
             }}>
-                {/* Clear All Button */}
                 <button
                     onClick={() => {
                         if (window.confirm('Sei sicuro di voler cancellare tutti gli elementi dalla lavagna?')) {
@@ -295,7 +278,6 @@ const MainContent = forwardRef(({
                 >
                     Cancella Tutto
                 </button>
-
             </div>
         </div>
     );
