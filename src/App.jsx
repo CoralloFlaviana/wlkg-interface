@@ -5,7 +5,7 @@ import MainContent from './components/MainContent.jsx';
 import GlobalConnection from './components/GlobalConnection.jsx';
 import InfoPanel from './components/InfoPanel.jsx';
 
-const API_BASE = '/api/query/';
+//const API_BASE = '/api/query/';
 
 function App() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -28,8 +28,8 @@ function App() {
 
     // Funzione per ottenere il colore in base al tipo
     const getColorForType = (entityType) => {
-        if (!entityType) return '#3e8aad';
-        console.log("ENTITà BOX", entityType);
+        if (!entityType) return '#95a5a6';
+        console.log(" color for type:", entityType);
         const typeConfig = entityTypes.find(t => t.value === entityType);
         return typeConfig?.color || '#95a5a6';
     };
@@ -39,16 +39,18 @@ function App() {
         const fetchEntityTypes = async () => {
             try {
                 const response = await fetch('/info_entities');
+                //const response = await fetch(`/api/info_entities`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
                 const data = await response.json();
 
                 const types = Object.entries(data.entities).map(([key, entity]) => ({
-                    value: key,
+                    value: entity.label,
                     label: entity.label,
                     color: entity.color,
                     type: entity.type
                 }));
+
                 console.log(types);
                 setEntityTypes(types);
             } catch (error) {
@@ -123,6 +125,7 @@ function App() {
         }
 
         try {
+            //const response = await fetch(`${API_BASE}/rel?ris=${encodeURIComponent(uri)}`);
             const response = await fetch(`/rel?ris=${encodeURIComponent(uri)}`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 

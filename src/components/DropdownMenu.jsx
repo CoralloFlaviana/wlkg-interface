@@ -55,6 +55,7 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
         setError(null);
 
         try {
+            //const url = `${API_BASE}/entityFind?rel=${encodeURIComponent(option.uri)}&o=${encodeURIComponent(sourceBoxId)}`;
             const url = `/entityFind?rel=${encodeURIComponent(option.uri)}&o=${encodeURIComponent(sourceBoxId)}`;
             console.log("Making request to:", url);
 

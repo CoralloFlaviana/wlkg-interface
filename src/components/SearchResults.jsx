@@ -13,14 +13,12 @@ const SearchResults = ({ results, onSelectResult, selectedItems }) => {
             return;
         }
 
-        // Estrai il tipo dall'URI o usa un campo dedicato se disponibile
+        // Estrai il tipo dall'api o usa unknown
         let entityType = 'unknown';
 
-        // Prova a determinare il tipo dall'URI o dai metadati del risultato
-        if (result.type?.value) {
-            entityType = result.type.value;
-        } else if (result.entityType) {
-            entityType = result.entityType;
+        if (result.type) {
+            console.log("provaaaaaaaaaaaaaa", result.type);
+            entityType = result.type;
         } else {
             // Fallback: prova a dedurre dal path dell'URI
             const uri = result.s?.value || '';
