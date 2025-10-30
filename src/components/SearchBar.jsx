@@ -5,36 +5,44 @@ function SearchBar({ searchQuery, setSearchQuery, setResults, entityTypes }) {
     const [isLoading, setIsLoading] = useState(false);
     const [searchType, setSearchType] = useState('person');
 
-    // Usa entityTypes passato come prop invece di un array hardcoded nel caso contrario uso dati di test todo togliere
+    //const API_BASE = '/api/query/';
+
+    // Mappa entityTypes per usare 'type' come valore invece di 'value'
     const searchTypeOptions = entityTypes && entityTypes.length > 0
-        ? entityTypes
+        ? entityTypes.map(et => {
+            // Estrae solo la parte dopo ':' (es. "prov:Person" -> "person")
+            let typeValue = et.type;
+            if (typeValue && typeValue.includes(':')) {
+                typeValue = typeValue.split(':')[1].toLowerCase();
+            }
+            return {
+                value: et.label,      // Usa 'type' pulito (person, work, etc.)
+                label: et.label,       // Mantieni la label per visualizzazione
+                originalValue: et.value,  // Mantieni il valore originale se serve
+                fullType: et.type      // Mantieni il tipo completo se serve
+            };
+        })
         : [
             { value: 'person', label: 'Persona' },
             { value: 'work', label: 'Opera' },
             { value: 'subject', label: 'Soggetto' }
         ];
-
+console.log(searchTypeOptions);
     const fetchData = async () => {
         try {
-            const queryParams = new URLSearchParams({
-                template: JSON.stringify({
-                    "QuestionFocus": '',
-                    "entities": { "work": [], "person": [], "subject": [], "publisher": [] }
-                }),
-                text: searchQuery,
-                type: searchType,
-                k: 1,
-            });
+            // Costruisce l'URL con i parametri label e numberEntity
+            /*const url = searchType === 'altro'
+                ? `${API_BASE}/search_regex?label=${encodeURIComponent(searchQuery)}`
+                : `${API_BASE}/search_regex?label=${encodeURIComponent(searchQuery)}&entity_label=${encodeURIComponent(searchType)}`;
+*/
+            const url = searchType === 'altro'
+                ? `/search_regex?label=${encodeURIComponent(searchQuery)}`
+                : `/search_regex?label=${encodeURIComponent(searchQuery)}&entity_label=${encodeURIComponent(searchType)}`;
 
+            console.log('Chiamata API:', url);
+            console.log('searchType selezionato:', searchType);
 
-            const response = await fetch(`/search_regex?label=${searchQuery}`);
-            console.log('/search_regex?label=', searchQuery);
-            /*if (entityTypes !== "altro") {
-                const response = await fetch(`/search_regex?label=${searchQuery}&numberEntity${entityTypes}`);
-            } else {
-                console.log("EntityType è 'altro', quindi non eseguo la fetch.");
-            }*/
-
+            const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error(`Errore API: ${response.statusText}`);
