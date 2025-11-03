@@ -29,6 +29,26 @@ export default defineConfig({
                 target: 'http://0.0.0.0:8000/',
                 changeOrigin: true,
                 secure: false,
+            },
+            '/getUrlWikidataFromEntity':{
+                target: 'http://0.0.0.0:8000/query',
+                changeOrigin: true,
+                secure: false,
+            },
+            '/getUrlGoodreadsFromEntity':{
+                target: 'http://0.0.0.0:8000/query',
+                changeOrigin: true,
+                secure: false,
+            },
+            '/getUrlOlidFromEntity':{
+                target: 'http://0.0.0.0:8000/query',
+                changeOrigin: true,
+                secure: false,
+            },
+            '/getImageFromEntity':{
+                target: 'http://0.0.0.0:8000/query',
+                changeOrigin: true,
+                secure: false,
             }
         },
     },
