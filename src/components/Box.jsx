@@ -183,23 +183,6 @@ const Box = ({
                 {boxData.label}
             </div>
 
-            {/* Type badge */}
-            {boxData.entityType && (
-                <div style={{
-                    position: 'absolute',
-                    bottom: '4px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    backgroundColor: 'rgba(0,0,0,0.2)',
-                    color: 'white',
-                    fontSize: '8px',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    pointerEvents: 'none'
-                }}>
-                    {boxData.entityType}
-                </div>
-            )}
 
             {/* Buttons */}
             <div style={{

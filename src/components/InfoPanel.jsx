@@ -22,6 +22,7 @@ const InfoPanel = ({ isOpen, onClose, entityData }) => {
     // Fetch delle informazioni aggiuntive quando si apre il pannello o cambia l'entità
     useEffect(() => {
         if (!isOpen || !entityData?.uri) {
+            console.log('Pannello chiuso o entityData.uri mancante, skip fetch');
             return;
         }
 
@@ -31,59 +32,45 @@ const InfoPanel = ({ isOpen, onClose, entityData }) => {
 
             try {
                 // Fetch immagine
-                const imageResponse = await fetch(`/getImageFromEntity?uri=${uri}`);
+                const imageResponse = await fetch(`/getImageFromEntity?entity=${uri}`);
                 const imageData = await imageResponse.json();
                 console.log('Image data:', imageData);
 
-                if (Array.isArray(imageData) && imageData.length === 0) {
-                    setImageUrl('not-found');
-                } else if (imageData.image || imageData.url || typeof imageData === 'string') {
-                    setImageUrl(imageData.image || imageData.url || imageData);
+                if (imageData.results && imageData.results.length > 0 && imageData.results[0].img) {
+                    setImageUrl(imageData.results[0].img.value);
                 } else {
                     setImageUrl('not-found');
                 }
 
                 // Fetch URL Wikidata
-                const wikidataResponse = await fetch(`/getUrlWikidataFromEntity?uri=${uri}`);
+                const wikidataResponse = await fetch(`/getUrlWikidataFromEntity?entity=${uri}`);
                 const wikidataData = await wikidataResponse.json();
                 console.log('Wikidata data:', wikidataData);
 
-                if (Array.isArray(wikidataData) && wikidataData.length === 0) {
-                    setWikidataUrl('not-found');
-                } else if (typeof wikidataData === 'string') {
-                    setWikidataUrl(wikidataData);
-                } else if (wikidataData.url) {
-                    setWikidataUrl(wikidataData.url);
+                if (wikidataData.results && wikidataData.results.length > 0 && wikidataData.results[0].wikid) {
+                    setWikidataUrl(wikidataData.results[0].wikid.value);
                 } else {
                     setWikidataUrl('not-found');
                 }
 
                 // Fetch URL OLID
-                const olidResponse = await fetch(`/getUrlOlidFromEntity?uri=${uri}`);
+                const olidResponse = await fetch(`/getUrlOlidFromEntity?entity=${uri}`);
                 const olidData = await olidResponse.json();
                 console.log('OLID data:', olidData);
 
-                if (Array.isArray(olidData) && olidData.length === 0) {
-                    setOlidUrl('not-found');
-                } else if (typeof olidData === 'string') {
-                    setOlidUrl(olidData);
-                } else if (olidData.url) {
-                    setOlidUrl(olidData.url);
+                if (olidData.results && olidData.results.length > 0 && olidData.results[0].olid) {
+                    setOlidUrl(olidData.results[0].olid.value);
                 } else {
                     setOlidUrl('not-found');
                 }
 
                 // Fetch URL Goodreads
-                const goodreadsResponse = await fetch(`/getUrlGoodreadsFromEntity?uri=${uri}`);
+                const goodreadsResponse = await fetch(`/getUrlGoodreadsFromEntity?entity=${uri}`);
                 const goodreadsData = await goodreadsResponse.json();
                 console.log('Goodreads data:', goodreadsData);
 
-                if (Array.isArray(goodreadsData) && goodreadsData.length === 0) {
-                    setGoodreadsUrl('not-found');
-                } else if (typeof goodreadsData === 'string') {
-                    setGoodreadsUrl(goodreadsData);
-                } else if (goodreadsData.url) {
-                    setGoodreadsUrl(goodreadsData.url);
+                if (goodreadsData.results && goodreadsData.results.length > 0 && goodreadsData.results[0].gdr) {
+                    setGoodreadsUrl(goodreadsData.results[0].gdr.value);
                 } else {
                     setGoodreadsUrl('not-found');
                 }

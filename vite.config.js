@@ -31,22 +31,22 @@ export default defineConfig({
                 secure: false,
             },
             '/getUrlWikidataFromEntity':{
-                target: 'http://0.0.0.0:8000/',
+                target: 'http://0.0.0.0:8000/query',
                 changeOrigin: true,
                 secure: false,
             },
             '/getUrlGoodreadsFromEntity':{
-                target: 'http://0.0.0.0:8000/',
+                target: 'http://0.0.0.0:8000/query',
                 changeOrigin: true,
                 secure: false,
             },
             '/getUrlOlidFromEntity':{
-                target: 'http://0.0.0.0:8000/',
+                target: 'http://0.0.0.0:8000/query',
                 changeOrigin: true,
                 secure: false,
             },
-            '/getUrlImageFromEntity':{
-                target: 'http://0.0.0.0:8000/',
+            '/getImageFromEntity':{
+                target: 'http://0.0.0.0:8000/query',
                 changeOrigin: true,
                 secure: false,
             }
