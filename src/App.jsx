@@ -5,7 +5,7 @@ import MainContent from './components/MainContent.jsx';
 import GlobalConnection from './components/GlobalConnection.jsx';
 import InfoPanel from './components/InfoPanel.jsx';
 
-//const API_BASE = '/api/query/';
+const API_BASE = '/api/query';
 
 function App() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -150,7 +150,7 @@ function App() {
 
     const handleRelationSelect = (sourceBoxId, connectionData) => {
         const newConnectionId = `conn-${Date.now()}`;
-
+        console.log("handele rel entity: ", connectionData.target?.entityType)
         let targetEntityType = connectionData.target?.entityType || 'unknown';
 
         if (connectionData.isExistingTarget && connectionData.targetBoxId) {
@@ -227,7 +227,10 @@ function App() {
             return;
         }
 
+        // Rimuovi il box principale dalla lista selectedItems
         setSelectedItems(prev => prev.filter(item => item.id !== itemId));
+
+        // Rimuovi le posizioni delle connessioni associate
         setConnectionPositions(prev => {
             const newPositions = { ...prev };
             Object.keys(newPositions).forEach(key => {
@@ -236,10 +239,23 @@ function App() {
             return newPositions;
         });
 
+        // Rimuovi TUTTI i box refs associati (box principale + box di connessioni)
         Object.keys(boxRefs.current).forEach(key => {
-            if (key.startsWith(itemId + '-')) delete boxRefs.current[key];
+            // Rimuovi il box principale (entity-box-itemId)
+            if (key === `entity-box-${itemId}`) {
+                delete boxRefs.current[key];
+            }
+            // Rimuovi i box delle connessioni (connection-box-itemId-*)
+            if (key.startsWith(`connection-box-${itemId}-`)) {
+                delete boxRefs.current[key];
+            }
+            // Rimuovi i box delle connessioni globali (global-connection-box-itemId-*)
+            if (key.startsWith(`global-connection-box-${itemId}-`)) {
+                delete boxRefs.current[key];
+            }
         });
 
+        // Rimuovi dalle connessioni globali
         setAllConnections(prev => prev.filter(conn => !conn.sourceBoxId.startsWith(itemId)));
     };
 

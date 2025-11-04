@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const API_BASE = '/api/query/';
+const API_BASE = '/api/query';
 
 const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDOMId, boxRefs }) => {
     const menuRef = useRef(null);
@@ -73,10 +73,8 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
                     let entityType = 'unknown';
                     const uri = r.s?.value || r.s || '';
 
-                    if (r.type?.value) {
-                        entityType = r.type.value;
-                    } else if (r.entityType) {
-                        entityType = r.entityType;
+                    if (r.type) {
+                        entityType = r.type;
                     } else {
                         if (uri.includes('person') || uri.includes('Person')) {
                             entityType = 'person';
@@ -136,7 +134,7 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
                 isExistingTarget: false
             });
         }
-
+console.log("enter config box data", option.entityType);
         closeMenu();
     };
 

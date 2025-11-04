@@ -87,9 +87,9 @@ const MainContent = forwardRef(({
 
                 {/* Render main items */}
                 {selectedItems.map((item, index) => {
-                    const itemColor = getColorForType ? getColorForType(item.entityType) : '#95a5a6';
+                    const itemColor = getColorForType(item.entityType);
                     const entityBoxId = `entity-box-${item.id}`;
-
+                    console.log("coloree:", item.entityType);
                     if (boxRefs.current) {
                         boxRefs.current[entityBoxId] = {
                             position: {
@@ -139,7 +139,7 @@ const MainContent = forwardRef(({
                                     return null;
                                 }
 
-                                const connColor = getColorForType ? getColorForType(connection.target?.entityType) : '#95a5a6';
+                                const connColor =  getColorForType(connection.target?.entityType);
 
                                 return (
                                     <Box
@@ -183,7 +183,7 @@ const MainContent = forwardRef(({
                     }
 
                     const targetBoxId = `global-connection-box-${connection.sourceBoxId}-${connection.id}`;
-                    const connColor = getColorForType ? getColorForType(connection.target?.entityType) : '#95a5a6';
+                    const connColor = getColorForType(connection.target?.entityType);
 
                     return (
                         <Box
