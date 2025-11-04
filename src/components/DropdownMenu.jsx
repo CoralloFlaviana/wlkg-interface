@@ -10,6 +10,19 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    // Aggiungi lo stile per l'animazione
+    useEffect(() => {
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+        return () => document.head.removeChild(style);
+    }, []);
+
     // Chiudi il menu quando si clicca fuori
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -79,8 +92,10 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
         console.log("Source box DOM ID (sourceBoxDOMId):", sourceBoxDOMId);
 
         setSelectedFirstLevel(option);
+        setShowSecondLevel(true); // Mostra subito il secondo livello
         setLoading(true);
         setError(null);
+        setSecondLevelOptions([]); // Pulisci i risultati precedenti
 
         try {
             //const url = `${API_BASE}/entityFind?rel=${encodeURIComponent(option.uri)}&o=${encodeURIComponent(sourceBoxId)}`;
@@ -123,7 +138,6 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
 
             console.log("Processed second level options:", secondLevelOptions);
             setSecondLevelOptions(secondLevelOptions);
-            setShowSecondLevel(true);
         } catch (err) {
             console.error("Errore caricando il secondo livello:", err);
             setError(`Errore: ${err.message}`);
@@ -162,7 +176,7 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
                 isExistingTarget: false
             });
         }
-console.log("enter config box data", option.entityType);
+        console.log("enter config box data", option.entityType);
         closeMenu();
     };
 
@@ -237,8 +251,29 @@ console.log("enter config box data", option.entityType);
                     </div>
 
                     {loading && (
-                        <div style={{ padding: '10px 12px', textAlign: 'center', color: '#666' }}>
-                            Caricamento...
+                        <div style={{
+                            padding: '20px 12px',
+                            textAlign: 'center',
+                            color: '#666',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '10px'
+                        }}>
+                            <div style={{
+                                width: '40px',
+                                height: '40px',
+                                border: '4px solid #f3f3f3',
+                                borderTop: '4px solid #9b59b6',
+                                borderRadius: '50%',
+                                animation: 'spin 1s linear infinite'
+                            }} />
+                            <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
+                                Caricamento in corso...
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#999' }}>
+                                Ricerca delle entità correlate
+                            </div>
                         </div>
                     )}
 
