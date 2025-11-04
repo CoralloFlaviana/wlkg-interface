@@ -36,6 +36,9 @@ const Box = ({
     const boxId = getBoxId();
 
     useEffect(() => {
+        const boxId = getBoxId();
+
+        // Registra il box nei refs
         if (boxRefs.current) {
             boxRefs.current[boxId] = {
                 position: targetPosition,
@@ -43,8 +46,27 @@ const Box = ({
                 label: boxData.label,
                 entityType: boxData.entityType || 'unknown'
             };
+
+            console.log(' Registered box:', boxId);
         }
-    }, [targetPosition, boxData.uri, boxData.label, boxData.entityType, boxId, boxRefs]);
+
+        // Cleanup quando il componente viene smontato
+        return () => {
+            if (boxRefs.current && boxRefs.current[boxId]) {
+                console.log(' Cleanup: Removing box from refs:', boxId);
+                delete boxRefs.current[boxId];
+
+                // Rimuovi anche tutte le varianti
+                const baseId = boxData.id.toString();
+                Object.keys(boxRefs.current).forEach(key => {
+                    if (key.includes(baseId)) {
+                        console.log(' Cleanup: Removing related ref:', key);
+                        delete boxRefs.current[key];
+                    }
+                });
+            }
+        };
+    }, [targetPosition, boxData.uri, boxData.label, boxData.entityType, boxData.id]);
 
     const handleMouseDown = (e) => {
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
@@ -145,6 +167,32 @@ const Box = ({
             <button
                 onClick={(e) => {
                     e.stopPropagation();
+                    const boxId = getBoxId();
+
+                    console.log(' Remove button clicked for:', boxId);
+                    console.log('urrent boxRefs before removal:', Object.keys(boxRefs.current));
+
+                    // 1. Pulisci il ref IMMEDIATAMENTE
+                    if (boxRefs.current) {
+                        // Rimuovi questo specifico box
+                        if (boxRefs.current[boxId]) {
+                            console.log(' Deleting boxRef:', boxId);
+                            delete boxRefs.current[boxId];
+                        }
+
+                        // Rimuovi anche varianti dell'ID
+                        const baseId = boxData.id.toString();
+                        Object.keys(boxRefs.current).forEach(key => {
+                            if (key.includes(baseId) || key === boxId) {
+                                console.log(' Deleting related boxRef:', key);
+                                delete boxRefs.current[key];
+                            }
+                        });
+                    }
+
+                    console.log(' Current boxRefs after cleanup:', Object.keys(boxRefs.current));
+
+                    // 2. Chiama onRemove
                     onRemove(boxData.id);
                 }}
                 style={{

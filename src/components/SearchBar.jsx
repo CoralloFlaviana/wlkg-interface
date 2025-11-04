@@ -5,7 +5,7 @@ function SearchBar({ searchQuery, setSearchQuery, setResults, entityTypes }) {
     const [isLoading, setIsLoading] = useState(false);
     const [searchType, setSearchType] = useState('person');
 
-    //const API_BASE = '/api/query/';
+    const API_BASE = '/api/query';
 
     // Mappa entityTypes per usare 'type' come valore invece di 'value'
     const searchTypeOptions = entityTypes && entityTypes.length > 0
@@ -31,58 +31,58 @@ console.log(searchTypeOptions);
     const fetchData = async () => {
         try {
             // Costruisce l'URL con i parametri label e numberEntity
-            /*const url = searchType === 'altro'
+            /* const url = searchType === 'altro'
                 ? `${API_BASE}/search_regex?label=${encodeURIComponent(searchQuery)}`
                 : `${API_BASE}/search_regex?label=${encodeURIComponent(searchQuery)}&entity_label=${encodeURIComponent(searchType)}`;
 */
             const url = searchType === 'altro'
-                ? `/search_regex?label=${encodeURIComponent(searchQuery)}`
-                : `/search_regex?label=${encodeURIComponent(searchQuery)}&entity_label=${encodeURIComponent(searchType)}`;
+                 ? `/search_regex?label=${encodeURIComponent(searchQuery)}`
+                 : `/search_regex?label=${encodeURIComponent(searchQuery)}&entity_label=${encodeURIComponent(searchType)}`;
 
-            console.log('Chiamata API:', url);
-            console.log('searchType selezionato:', searchType);
+             console.log('Chiamata API:', url);
+             console.log('searchType selezionato:', searchType);
 
-            const response = await fetch(url);
+             const response = await fetch(url);
 
-            if (!response.ok) {
-                throw new Error(`Errore API: ${response.statusText}`);
-            }
+             if (!response.ok) {
+                 throw new Error(`Errore API: ${response.statusText}`);
+             }
 
-            const data = await response.json();
-            console.log("Risultato API:", data);
-            return data;
-        } catch (error) {
-            console.error("Errore nella chiamata API:", error);
-            return null;
-        }
-    };
+             const data = await response.json();
+             console.log("Risultato API:", data);
+             return data;
+         } catch (error) {
+             console.error("Errore nella chiamata API:", error);
+             return null;
+         }
+     };
 
-    const handleSearch = async () => {
-        if (!searchQuery.trim()) return;
-        setIsLoading(true);
-        console.log("Valore cercato:", searchQuery, "Tipo:", searchType);
+     const handleSearch = async () => {
+         if (!searchQuery.trim()) return;
+         setIsLoading(true);
+         console.log("Valore cercato:", searchQuery, "Tipo:", searchType);
 
-        try {
-            const data = await fetchData();
+         try {
+             const data = await fetchData();
 
-            if (!data) {
-                setResults([]);
-                return;
-            }
+             if (!data) {
+                 setResults([]);
+                 return;
+             }
 
-            console.log("Risultati ricevuti:", data, "Tipo:", typeof data);
+             console.log("Risultati ricevuti:", data, "Tipo:", typeof data);
 
-            let formattedResults = [];
-            if (Array.isArray(data.results)) {
-                formattedResults = data.results;
-            } else if (typeof data.results === "object") {
-                formattedResults = Object.values(data.results);
-            } else {
-                formattedResults = [];
-            }
+             let formattedResults = [];
+             if (Array.isArray(data.results)) {
+                 formattedResults = data.results;
+             } else if (typeof data.results === "object") {
+                 formattedResults = Object.values(data.results);
+             } else {
+                 formattedResults = [];
+             }
 
-            if (formattedResults.length === 0) {
-                console.warn("Nessun risultato trovato. Uso dati fittizi."); /*TODO: DA TOGLIERE QUESTA PARTE SERVE SOLO X TEST*/
+             if (formattedResults.length === 0) {
+                 console.warn("Nessun risultato trovato. Uso dati fittizi."); /*TODO: DA TOGLIERE QUESTA PARTE SERVE SOLO X TEST*/
                 const fakeData = {
                     results: {
                         bindings: [

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const API_BASE = '/api/query/';
+const API_BASE = '/api/query';
 
 const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDOMId, boxRefs }) => {
     const menuRef = useRef(null);
@@ -27,21 +27,49 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
     // Funzione per trovare se un'entità esiste già in una box
     const findExistingBox = (uri) => {
         if (!boxRefs?.current) {
-            console.log('boxRefs not available');
+            console.log('❌ boxRefs not available');
             return null;
         }
 
-        console.log('Searching for URI:', uri);
-        console.log('Available boxes:', Object.keys(boxRefs.current));
+        console.group('🔍 Finding existing box for URI');
+        console.log('Search URI:', uri);
+        console.log('Available boxRefs:', Object.keys(boxRefs.current));
 
+        // Normalizza l'URI per il confronto
+        const normalizeUri = (u) => {
+            if (!u) return '';
+            return u.trim().toLowerCase();
+        };
+
+        const searchUri = normalizeUri(uri);
+
+        // 1. Cerca nei boxRefs
         for (const [boxId, boxData] of Object.entries(boxRefs.current)) {
-            console.log(`Checking box ${boxId}: ${boxData.uri} === ${uri}?`, boxData.uri === uri);
-            if (boxData.uri === uri) {
-                console.log('Found existing box:', boxId);
-                return boxId;
+            const boxUri = normalizeUri(boxData.uri);
+
+            console.log(`Checking ${boxId}:`, {
+                boxUri,
+                searchUri,
+                match: boxUri === searchUri
+            });
+
+            if (boxUri === searchUri) {
+                // 2. Verifica che l'elemento esista VERAMENTE nel DOM
+                const element = document.getElementById(boxId);
+
+                if (element) {
+                    console.log('✅ MATCH FOUND AND VERIFIED IN DOM:', boxId);
+                    console.groupEnd();
+                    return boxId;
+                } else {
+                    console.warn('⚠️ Match found but element not in DOM, cleaning up:', boxId);
+                    delete boxRefs.current[boxId];
+                }
             }
         }
-        console.log('No existing box found for URI:', uri);
+
+        console.log('❌ No existing box found (or all were orphaned)');
+        console.groupEnd();
         return null;
     };
 
@@ -73,10 +101,8 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
                     let entityType = 'unknown';
                     const uri = r.s?.value || r.s || '';
 
-                    if (r.type?.value) {
-                        entityType = r.type.value;
-                    } else if (r.entityType) {
-                        entityType = r.entityType;
+                    if (r.type) {
+                        entityType = r.type;
                     } else {
                         if (uri.includes('person') || uri.includes('Person')) {
                             entityType = 'person';
@@ -136,7 +162,7 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
                 isExistingTarget: false
             });
         }
-
+console.log("enter config box data", option.entityType);
         closeMenu();
     };
 

@@ -5,7 +5,7 @@ import MainContent from './components/MainContent.jsx';
 import GlobalConnection from './components/GlobalConnection.jsx';
 import InfoPanel from './components/InfoPanel.jsx';
 
-//const API_BASE = '/api/query/';
+const API_BASE = '/api/query';
 
 function App() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -150,7 +150,6 @@ function App() {
 
     const handleRelationSelect = (sourceBoxId, connectionData) => {
         const newConnectionId = `conn-${Date.now()}`;
-
         let targetEntityType = connectionData.target?.entityType || 'unknown';
 
         if (connectionData.isExistingTarget && connectionData.targetBoxId) {
@@ -218,29 +217,173 @@ function App() {
     };
 
     const handleRemove = (itemId) => {
+        console.log(' Starting removal for:', itemId);
+
+        // Caso speciale: cancella tutto
         if (itemId === 'all') {
             setSelectedItems([]);
             setConnectionPositions({});
             setAllConnections([]);
+            setRelations([]);
+            setMenuOpenIndex(null);
+            setMenuOpenConnectionId(null);
             boxRefs.current = {};
             itemRefs.current = {};
+            console.log('All cleared');
             return;
         }
 
-        setSelectedItems(prev => prev.filter(item => item.id !== itemId));
+        // STEP 1: Pulisci IMMEDIATAMENTE i boxRefs - PRIMA di tutto
+        const cleanupBoxRefs = (id) => {
+            const boxId = id.startsWith('entity-box-') ? id : `entity-box-${id}`;
+
+            // Lista di tutti i possibili pattern di ID per questo box
+            const patternsToRemove = [
+                boxId,
+                id,
+                `connection-box-${id}`,
+                `global-connection-box-${id}`
+            ];
+
+            console.log(' Cleaning boxRefs for patterns:', patternsToRemove);
+
+            // Rimuovi tutti i refs che contengono l'ID
+            Object.keys(boxRefs.current).forEach(key => {
+                const shouldRemove = patternsToRemove.some(pattern =>
+                    key.includes(pattern) || key.includes(id)
+                );
+
+                if (shouldRemove) {
+                    console.log(' Removing boxRef:', key);
+                    delete boxRefs.current[key];
+                }
+            });
+
+            // Rimuovi anche da itemRefs
+            if (itemRefs.current[id]) {
+                console.log(' Removing itemRef:', id);
+                delete itemRefs.current[id];
+            }
+            if (itemRefs.current[boxId]) {
+                console.log(' Removing itemRef:', boxId);
+                delete itemRefs.current[boxId];
+            }
+        };
+
+        // Pulisci subito i refs
+        cleanupBoxRefs(itemId);
+
+        // STEP 2: Ottieni l'ID pulito (senza prefisso entity-box-)
+        const cleanId = itemId.replace('entity-box-', '');
+
+        console.log('Clean ID:', cleanId);
+        console.log('Remaining boxRefs:', Object.keys(boxRefs.current));
+
+        // STEP 3: Rimuovi il box principale da selectedItems
+        setSelectedItems(prev => {
+            const filtered = prev.filter(item => {
+                const keep = item.id !== cleanId && item.id !== itemId;
+                if (!keep) {
+                    console.log(' Removing from selectedItems:', item.id);
+                }
+                return keep;
+            });
+
+            // Rimuovi anche le connessioni che puntano al box eliminato
+            return filtered.map(item => {
+                if (!item.connections || item.connections.length === 0) return item;
+
+                const filteredConnections = item.connections.filter(conn => {
+                    const targetId = conn.isExistingTarget
+                        ? conn.targetBoxId
+                        : `connection-box-${item.id}-${conn.id}`;
+
+                    const keep = !targetId.includes(cleanId) &&
+                        !targetId.includes(itemId) &&
+                        targetId !== itemId &&
+                        targetId !== `entity-box-${cleanId}`;
+
+                    if (!keep) {
+                        console.log(' Removing connection to deleted box:', targetId);
+                        // Pulisci anche il boxRef di questa connessione
+                        if (boxRefs.current[targetId]) {
+                            delete boxRefs.current[targetId];
+                        }
+                    }
+
+                    return keep;
+                });
+
+                return { ...item, connections: filteredConnections };
+            });
+        });
+
+        // STEP 4: Rimuovi dalle connessioni globali
+        setAllConnections(prev => prev.filter(conn => {
+            const sourceMatches = conn.sourceBoxId === itemId ||
+                conn.sourceBoxId === cleanId ||
+                conn.sourceBoxId.includes(cleanId) ||
+                conn.sourceBoxId.includes(itemId);
+
+            const targetId = conn.isExistingTarget
+                ? conn.targetBoxId
+                : `global-connection-box-${conn.sourceBoxId}-${conn.id}`;
+
+            const targetMatches = targetId === itemId ||
+                targetId === cleanId ||
+                targetId.includes(cleanId) ||
+                targetId.includes(itemId);
+
+            const keep = !sourceMatches && !targetMatches;
+
+            if (!keep) {
+                console.log('Removing global connection:', conn.id);
+                // Pulisci anche il boxRef di questa connessione
+                if (boxRefs.current[targetId]) {
+                    delete boxRefs.current[targetId];
+                }
+            }
+
+            return keep;
+        }));
+
+        // STEP 5: Pulisci le posizioni delle connessioni
         setConnectionPositions(prev => {
             const newPositions = { ...prev };
             Object.keys(newPositions).forEach(key => {
-                if (key.startsWith(itemId + '-')) delete newPositions[key];
+                if (key.includes(cleanId) || key.includes(itemId)) {
+                    console.log(' Removing connection position:', key);
+                    delete newPositions[key];
+                }
             });
             return newPositions;
         });
 
-        Object.keys(boxRefs.current).forEach(key => {
-            if (key.startsWith(itemId + '-')) delete boxRefs.current[key];
-        });
+        // STEP 6: Chiudi eventuali menu aperti
+        if (menuOpenConnectionId === itemId ||
+            menuOpenConnectionId === cleanId ||
+            menuOpenConnectionId?.includes(cleanId) ||
+            menuOpenConnectionId?.includes(itemId)) {
+            console.log(' Closing menu');
+            setMenuOpenConnectionId(null);
+        }
 
-        setAllConnections(prev => prev.filter(conn => !conn.sourceBoxId.startsWith(itemId)));
+        // STEP 7: Verifica finale e cleanup
+        setTimeout(() => {
+            console.log('Final verification:');
+            console.log('  Remaining boxRefs:', Object.keys(boxRefs.current));
+            console.log('  Remaining itemRefs:', Object.keys(itemRefs.current));
+
+            // Pulizia finale di sicurezza
+            Object.keys(boxRefs.current).forEach(key => {
+                if (key.includes(cleanId) || key.includes(itemId)) {
+                    console.log(' Found orphaned boxRef, removing:', key);
+                    delete boxRefs.current[key];
+                }
+            });
+
+            console.log('Removal completed for:', itemId);
+        }, 50);
     };
 
     const handlePositionChange = (itemId, newPosition) => {

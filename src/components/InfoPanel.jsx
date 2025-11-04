@@ -8,6 +8,8 @@ const InfoPanel = ({ isOpen, onClose, entityData }) => {
     const [goodreadsUrl, setGoodreadsUrl] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    const API_BASE = '/api/query';
+
     useEffect(() => {
         if (!isOpen) return;
 
@@ -32,7 +34,7 @@ const InfoPanel = ({ isOpen, onClose, entityData }) => {
 
             try {
                 // Fetch immagine
-                const imageResponse = await fetch(`/getImageFromEntity?entity=${uri}`);
+                const imageResponse = await fetch(`${API_BASE}/getImageFromEntity?entity=${uri}`);
                 const imageData = await imageResponse.json();
                 console.log('Image data:', imageData);
 
@@ -43,7 +45,7 @@ const InfoPanel = ({ isOpen, onClose, entityData }) => {
                 }
 
                 // Fetch URL Wikidata
-                const wikidataResponse = await fetch(`/getUrlWikidataFromEntity?entity=${uri}`);
+                const wikidataResponse = await fetch(`${API_BASE}/getUrlWikidataFromEntity?entity=${uri}`);
                 const wikidataData = await wikidataResponse.json();
                 console.log('Wikidata data:', wikidataData);
 
@@ -54,7 +56,7 @@ const InfoPanel = ({ isOpen, onClose, entityData }) => {
                 }
 
                 // Fetch URL OLID
-                const olidResponse = await fetch(`/getUrlOlidFromEntity?entity=${uri}`);
+                const olidResponse = await fetch(`${API_BASE}/getUrlOlidFromEntity?entity=${uri}`);
                 const olidData = await olidResponse.json();
                 console.log('OLID data:', olidData);
 
@@ -65,7 +67,7 @@ const InfoPanel = ({ isOpen, onClose, entityData }) => {
                 }
 
                 // Fetch URL Goodreads
-                const goodreadsResponse = await fetch(`/getUrlGoodreadsFromEntity?entity=${uri}`);
+                const goodreadsResponse = await fetch(`${API_BASE}/getUrlGoodreadsFromEntity?entity=${uri}`);
                 const goodreadsData = await goodreadsResponse.json();
                 console.log('Goodreads data:', goodreadsData);
 
