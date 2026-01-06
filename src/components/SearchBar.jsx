@@ -5,7 +5,9 @@ function SearchBar({ searchQuery, setSearchQuery, setResults, entityTypes }) {
     const [isLoading, setIsLoading] = useState(false);
     const [searchType, setSearchType] = useState('person');
 
-    const API_BASE = '/api/query';
+    //const API_URL = import.meta.env.VITE_API_URL;
+    const API_BASE = `/api/query`;
+
 
     // Mappa entityTypes per usare 'type' come valore invece di 'value'
     const searchTypeOptions = entityTypes && entityTypes.length > 0
@@ -31,14 +33,14 @@ console.log(searchTypeOptions);
     const fetchData = async () => {
         try {
             // Costruisce l'URL con i parametri label e numberEntity
-            /* const url = searchType === 'altro'
+             const url = searchType === 'altro'
                 ? `${API_BASE}/search_regex?label=${encodeURIComponent(searchQuery)}`
                 : `${API_BASE}/search_regex?label=${encodeURIComponent(searchQuery)}&entity_label=${encodeURIComponent(searchType)}`;
-*/
+/*
             const url = searchType === 'altro'
                  ? `/search_regex?label=${encodeURIComponent(searchQuery)}`
                  : `/search_regex?label=${encodeURIComponent(searchQuery)}&entity_label=${encodeURIComponent(searchType)}`;
-
+        */
              console.log('Chiamata API:', url);
              console.log('searchType selezionato:', searchType);
 
