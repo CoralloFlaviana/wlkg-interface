@@ -1,13 +1,18 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import SearchResults from './components/SearchResults.jsx';
 import MainContent from './components/MainContent.jsx';
 import GlobalConnection from './components/GlobalConnection.jsx';
 import InfoPanel from './components/InfoPanel.jsx';
+import TripleExporter from './components/TripleExporter.jsx';
+import AboutPage from './components/AboutPage.jsx';
 
-const API_BASE = '/api/query';
+//const API_URL = import.meta.env.VITE_API_URL;
+const API_BASE = `/api/query`
 
 function App() {
+    // Tutti gli hook devono essere sempre chiamati nello stesso ordine
+    const [currentPage, setCurrentPage] = useState('main');
     const [searchQuery, setSearchQuery] = useState('');
     const [results, setResults] = useState([]);
     const [relations, setRelations] = useState([]);
@@ -19,31 +24,20 @@ function App() {
     const [connectionPositions, setConnectionPositions] = useState({});
     const [allConnections, setAllConnections] = useState([]);
     const [entityTypes, setEntityTypes] = useState([]);
-
-    // Stati per il pannello info
     const [infoPanelOpen, setInfoPanelOpen] = useState(false);
     const [selectedEntityForInfo, setSelectedEntityForInfo] = useState(null);
-
     const mainContentRef = useRef(null);
 
-    // Funzione per ottenere il colore in base al tipo
-    const getColorForType = (entityType) => {
-        if (!entityType) return '#95a5a6';
-        console.log(" color for type:", entityType);
-        const typeConfig = entityTypes.find(t => t.value === entityType);
-        return typeConfig?.color || '#95a5a6';
-    };
-
-    // Carica le entità disponibili all'avvio
-    React.useEffect(() => {
+    // Caricamento tipi di entità
+    useEffect(() => {
         const fetchEntityTypes = async () => {
             try {
-                const response = await fetch('/info_entities');
-                //const response = await fetch(`/api/info_entities`);
+                const response = await fetch(`/api/info_entities`);
+                console.log("sono dentro info");
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
                 const data = await response.json();
-
+                console.log(data);
                 const types = Object.entries(data.entities).map(([key, entity]) => ({
                     value: entity.label,
                     label: entity.label,
@@ -66,16 +60,20 @@ function App() {
         fetchEntityTypes();
     }, []);
 
+    const getColorForType = (entityType) => {
+        if (!entityType) return '#95a5a6';
+        const typeConfig = entityTypes.find(t => t.value === entityType);
+        return typeConfig?.color || '#95a5a6';
+    };
+
     const handleScreenshot = async () => {
         if (!mainContentRef.current) return;
-
         try {
             const canvas = await html2canvas(mainContentRef.current, {
                 useCORS: true,
                 scale: 2,
                 backgroundColor: '#ffffff',
             });
-
             const dataURL = canvas.toDataURL('image/png');
             const link = document.createElement('a');
             link.href = dataURL;
@@ -86,9 +84,7 @@ function App() {
         }
     };
 
-    // Funzione per aprire il pannello info
     const handleOpenInfo = (boxId) => {
-        // Cerca l'entità nei selectedItems
         const mainItem = selectedItems.find(item => item.id === boxId);
 
         if (mainItem) {
@@ -97,7 +93,6 @@ function App() {
             return;
         }
 
-        // Altrimenti cerca nei boxRefs (per box di connessione)
         if (boxRefs.current[boxId]) {
             const boxData = boxRefs.current[boxId];
             setSelectedEntityForInfo({
@@ -113,24 +108,19 @@ function App() {
 
     const handleOpenRelations = async (boxId) => {
         let uri;
-
         const mainItem = selectedItems.find(item => item.id === boxId);
-        if (mainItem) {
-            uri = mainItem.uri;
-        } else if (boxRefs.current[boxId]) {
-            uri = boxRefs.current[boxId].uri;
-        } else {
+        if (mainItem) uri = mainItem.uri;
+        else if (boxRefs.current[boxId]) uri = boxRefs.current[boxId].uri;
+        else {
             console.error("Box non trovata:", boxId);
             return;
         }
 
         try {
-            //const response = await fetch(`${API_BASE}/rel?ris=${encodeURIComponent(uri)}`);
-            const response = await fetch(`/rel?ris=${encodeURIComponent(uri)}`);
+            const response = await fetch(`${API_BASE}/rel?ris=${encodeURIComponent(uri)}`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
             const data = await response.json();
-
             const resultOptions = data.results.map(result => ({
                 label: result.rel?.value?.split('#')[1] || '',
                 uri: result.rel?.value || ''
@@ -202,9 +192,7 @@ function App() {
                 return item;
             })
         );
-
         setAllConnections(prev => prev.filter(conn => !(conn.sourceBoxId === sourceBoxId && conn.id === connectionId)));
-
         setConnectionPositions(prev => {
             const newPositions = { ...prev };
             delete newPositions[`${sourceBoxId}-${connectionId}`];
@@ -215,6 +203,41 @@ function App() {
     const handleTargetMove = (sourceBoxId, connectionId, position) => {
         setConnectionPositions(prev => ({ ...prev, [`${sourceBoxId}-${connectionId}`]: position }));
     };
+
+    const handleSelectResult = (newItem) => {
+        console.log('Adding new item with type:', newItem);
+        setSelectedItems(prev => [...prev, newItem]);
+    };
+
+    const getBoxPosition = (boxId) => {
+        const mainItem = selectedItems.find(item => item.id === boxId);
+        if (mainItem && mainItem.position)
+            return { x: mainItem.position.x + 75, y: mainItem.position.y + 40 };
+        if (boxRefs.current[boxId]) return boxRefs.current[boxId].position;
+        return null;
+    };
+
+    const renderGlobalConnections = () =>
+        allConnections.map(connection => {
+            const sourcePos = getBoxPosition(connection.sourceBoxId);
+            if (!sourcePos) return null;
+
+            return (
+                <GlobalConnection
+                    key={connection.id}
+                    connection={connection}
+                    sourcePosition={sourcePos}
+                    onDelete={() => handleDeleteConnection(connection.sourceBoxId, connection.id)}
+                    onTargetMove={handleTargetMove}
+                    onOpenRelations={handleOpenRelations}
+                    menuOpenConnectionId={menuOpenConnectionId}
+                    setMenuOpenConnectionId={setMenuOpenConnectionId}
+                    relations={relations}
+                    onSelect={handleRelationSelect}
+                    boxRefs={boxRefs}
+                />
+            );
+        });
 
     const handleRemove = (itemId) => {
         console.log(' Starting removal for:', itemId);
@@ -394,111 +417,131 @@ function App() {
                     : item
             )
         );
-    };
+    // Render finale (condizionale dentro JSX, non prima degli hook)
 
-    const getBoxPosition = (boxId) => {
-        const mainItem = selectedItems.find(item => item.id === boxId);
-        if (mainItem && mainItem.position) return { x: mainItem.position.x + 75, y: mainItem.position.y + 40 };
-        if (boxRefs.current[boxId]) return boxRefs.current[boxId].position;
-        return null;
-    };
-
-    const renderGlobalConnections = () => {
-        return allConnections.map(connection => {
-            const sourcePos = getBoxPosition(connection.sourceBoxId);
-            if (!sourcePos) return null;
-
-            return (
-                <GlobalConnection
-                    key={connection.id}
-                    connection={connection}
-                    sourcePosition={sourcePos}
-                    onDelete={() => handleDeleteConnection(connection.sourceBoxId, connection.id)}
-                    onTargetMove={handleTargetMove}
-                    onOpenRelations={handleOpenRelations}
-                    menuOpenConnectionId={menuOpenConnectionId}
-                    setMenuOpenConnectionId={setMenuOpenConnectionId}
-                    relations={relations}
-                    onSelect={handleRelationSelect}
-                    boxRefs={boxRefs}
-                />
-            );
-        });
-    };
-
-    const handleSelectResult = (newItem) => {
-        console.log('Adding new item with type:', newItem);
-        setSelectedItems(prev => [...prev, newItem]);
     };
 
     return (
-        <div style={{
-            display: 'flex',
-            height: '100vh',
-            width: '100vw',
-            fontFamily: 'Arial, sans-serif',
-            overflow: 'hidden'
-        }}>
-            <SearchResults
-                results={results}
-                onSelectResult={handleSelectResult}
-                selectedItems={selectedItems}
-            />
-
-            <div style={{ position: 'relative', flex: 1 }}>
-                <MainContent
-                    ref={mainContentRef}
-                    selectedItems={selectedItems}
-                    itemRefs={itemRefs}
-                    boxRefs={boxRefs}
-                    onPositionChange={handlePositionChange}
-                    handleRemove={handleRemove}
-                    handleOpenRelations={handleOpenRelations}
-                    handleOpenInfo={handleOpenInfo}
-                    menuOpenIndex={menuOpenIndex}
-                    relations={relations}
-                    handleRelationSelect={handleRelationSelect}
-                    setMenuOpenIndex={setMenuOpenIndex}
-                    handleDeleteConnection={handleDeleteConnection}
-                    handleTargetMove={handleTargetMove}
-                    menuOpenConnectionId={menuOpenConnectionId}
-                    setMenuOpenConnectionId={setMenuOpenConnectionId}
-                    renderGlobalConnections={renderGlobalConnections}
-                    allConnections={allConnections}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    setResults={setResults}
-                    entityTypes={entityTypes}
-                    getColorForType={getColorForType}
-                />
-
-                <button
-                    onClick={handleScreenshot}
+        <>
+            {currentPage === 'about' ? (
+                <AboutPage onClose={() => setCurrentPage('main')} />
+            ) : (
+                <div
                     style={{
-                        position: 'absolute',
-                        top: 10,
-                        right: 10,
-                        zIndex: 1000,
-                        background: '#2563eb',
-                        color: '#fff',
-                        border: 'none',
-                        padding: '10px 16px',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                        display: 'flex',
+                        height: '100vh',
+                        width: '100vw',
+                        fontFamily: 'Arial, sans-serif',
+                        overflow: 'hidden'
                     }}
                 >
-                    Screenshot
-                </button>
-            </div>
+                    <SearchResults
+                        results={results}
+                        onSelectResult={handleSelectResult}
+                        selectedItems={selectedItems}
+                    />
 
-            {/* Info Panel */}
-            <InfoPanel
-                isOpen={infoPanelOpen}
-                onClose={() => setInfoPanelOpen(false)}
-                entityData={selectedEntityForInfo}
-            />
-        </div>
+                    <div style={{ position: 'relative', flex: 1 }}>
+                        <MainContent
+                            ref={mainContentRef}
+                            selectedItems={selectedItems}
+                            itemRefs={itemRefs}
+                            boxRefs={boxRefs}
+                            onPositionChange={(id, pos) => setSelectedItems(prev => prev.map(it => it.id === id ? { ...it, position: pos } : it))}
+                            handleRemove={handleRemove}
+                            handleOpenRelations={handleOpenRelations}
+                            handleOpenInfo={handleOpenInfo}
+                            menuOpenIndex={menuOpenIndex}
+                            relations={relations}
+                            handleRelationSelect={handleRelationSelect}
+                            setMenuOpenIndex={setMenuOpenIndex}
+                            handleDeleteConnection={handleDeleteConnection}
+                            handleTargetMove={handleTargetMove}
+                            menuOpenConnectionId={menuOpenConnectionId}
+                            setMenuOpenConnectionId={setMenuOpenConnectionId}
+                            renderGlobalConnections={renderGlobalConnections}
+                            allConnections={allConnections}
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                            setResults={setResults}
+                            entityTypes={entityTypes}
+                            getColorForType={getColorForType}
+                        />
+
+                        {/* Pulsante Screenshot */}
+                        <button
+                            onClick={handleScreenshot}
+                            style={{
+                                position: 'absolute',
+                                bottom: 18,
+                                right: 150,
+                                zIndex: 1000,
+                                background: '#2563eb',
+                                color: '#fff',
+                                border: 'none',
+                                padding: '8px 16px',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                                fontWeight: 'bold',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.background = '#1d4ed8';
+                                e.target.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.background = '#2563eb';
+                                e.target.style.transform = 'translateY(0)';
+                            }}
+                        >
+                            Screenshot
+                        </button>
+
+                        {/* Pulsante About Us */}
+                        <button
+                            onClick={() => setCurrentPage('about')}
+                            style={{
+                                position: 'absolute',
+                                top: 10,
+                                right: 120,
+                                zIndex: 1000,
+                                background: '#4f46e5',
+                                color: '#fff',
+                                border: 'none',
+                                padding: '10px 16px',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                                fontWeight: 'bold',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.background = '#4338ca';
+                                e.target.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.background = '#4f46e5';
+                                e.target.style.transform = 'translateY(0)';
+                            }}
+                        >
+                            About Us
+                        </button>
+                    </div>
+
+                    <InfoPanel
+                        isOpen={infoPanelOpen}
+                        onClose={() => setInfoPanelOpen(false)}
+                        entityData={selectedEntityForInfo}
+                    />
+                    {/* Bottone esportazione triple*/}
+                    <TripleExporter
+                        selectedItems={selectedItems}
+                        allConnections={allConnections}
+                    />
+                </div>
+            )}
+        </>
     );
 }
 

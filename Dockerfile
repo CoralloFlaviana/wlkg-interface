@@ -1,30 +1,32 @@
-# Multi-stage Dockerfile per applicazione React + Vite
-
+# ────────────────────────────────
 # Stage 1: Build dell'applicazione
+# ────────────────────────────────
 FROM node:18-alpine AS build
 
 # Imposta la directory di lavoro
 WORKDIR /app
 
-# Copia i file di configurazione delle dipendenze
+# Copia solo i file delle dipendenze
 COPY package*.json ./
 
-# Installa le dipendenze
+# Installa le dipendenze (pulito e riproducibile)
 RUN npm ci
 
-# Copia tutto il codice sorgente
+# Copia il resto del progetto (dopo aver installato dipendenze)
 COPY . .
 
 # Builda l'applicazione per la produzione
 RUN npm run build
 
+# ────────────────────────────────
 # Stage 2: Servire l'applicazione con Nginx
+# ────────────────────────────────
 FROM nginx:alpine AS production
 
 # Rimuovi la configurazione di default di Nginx
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Copia i file buildati dalla stage precedente
+# Copia la build da Node
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Crea una configurazione Nginx ottimizzata per SPA React
@@ -35,7 +37,7 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # Gestione del routing client-side per SPA
+    # Routing per SPA (React/Vite)
     location / {
         try_files \$uri \$uri/ /index.html;
     }
@@ -46,7 +48,7 @@ server {
         add_header Cache-Control "public, immutable";
     }
 
-    # Compressione gzip
+    # Abilita gzip
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
@@ -54,8 +56,12 @@ server {
 }
 EOF
 
-# Esponi la porta 80
+# Espone la porta HTTP
 EXPOSE 80
+
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
+
 
 # Avvia Nginx
 CMD ["nginx", "-g", "daemon off;"]

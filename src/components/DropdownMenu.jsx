@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const API_BASE = '/api/query';
+//const API_URL = import.meta.env.VITE_API_URL;
+const API_BASE = `/api/query`;
+
 
 const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDOMId, boxRefs }) => {
     const menuRef = useRef(null);
@@ -40,7 +42,7 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
     // Funzione per trovare se un'entità esiste già in una box
     const findExistingBox = (uri) => {
         if (!boxRefs?.current) {
-            console.log('❌ boxRefs not available');
+            console.log('boxRefs not available');
             return null;
         }
 
@@ -71,17 +73,17 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
                 const element = document.getElementById(boxId);
 
                 if (element) {
-                    console.log('✅ MATCH FOUND AND VERIFIED IN DOM:', boxId);
+                    console.log(' MATCH FOUND AND VERIFIED IN DOM:', boxId);
                     console.groupEnd();
                     return boxId;
                 } else {
-                    console.warn('⚠️ Match found but element not in DOM, cleaning up:', boxId);
+                    console.warn('Match found but element not in DOM, cleaning up:', boxId);
                     delete boxRefs.current[boxId];
                 }
             }
         }
 
-        console.log('❌ No existing box found (or all were orphaned)');
+        console.log('No existing box found (or all were orphaned)');
         console.groupEnd();
         return null;
     };
@@ -98,8 +100,8 @@ const DropdownMenu = ({ onSelect, closeMenu, relations, sourceBoxId, sourceBoxDO
         setSecondLevelOptions([]); // Pulisci i risultati precedenti
 
         try {
-            //const url = `${API_BASE}/entityFind?rel=${encodeURIComponent(option.uri)}&o=${encodeURIComponent(sourceBoxId)}`;
-            const url = `/entityFind?rel=${encodeURIComponent(option.uri)}&o=${encodeURIComponent(sourceBoxId)}`;
+            const url = `${API_BASE}/entityFind?rel=${encodeURIComponent(option.uri)}&o=${encodeURIComponent(sourceBoxId)}`;
+            //const url = `/entityFind?rel=${encodeURIComponent(option.uri)}&o=${encodeURIComponent(sourceBoxId)}`;
             console.log("Making request to:", url);
 
             const response = await fetch(url);

@@ -12,6 +12,7 @@
   "dependencies": {
     "framer-motion": "^12.8.0",
     "html2canvas": "^1.4.1",
+    "lucide-react": "^0.552.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-draggable": "^4.4.6",
